@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人像提示词工作室 · Portrait Prompt Studio (SFW)</title>
+<style>
+  :root{
+    --bg:#121216; --card:#1c1c24; --card2:#23232e; --line:#33333f;
+    --txt:#ececf2; --sub:#a6a6b8; --gold:#d9b36c; --gold2:#f0d9a8;
+    --ok:#7ec98b; --warn:#e0a458; --bad:#e07070; --pink:#d98ca0;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:var(--bg); color:var(--txt);
+    font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif; font-size:15px;}
+  .wrap{max-width:1280px; margin:0 auto; padding:18px 18px 60px;}
+  header{display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:18px 4px 14px; border-bottom:1px solid var(--line);}
+  header h1{font-size:22px; letter-spacing:1px; color:var(--gold2);}
+  header .sub{width:100%; color:var(--sub); font-size:13px;}
+  .notice{width:100%; font-size:12px; color:var(--sub);
+    background:rgba(217,179,108,.08); border:1px solid rgba(217,179,108,.25);
+    border-radius:8px; padding:7px 12px; line-height:1.6;}
+  .tools{margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .mode{display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  .mode button{border:none; background:transparent; color:var(--sub); padding:8px 16px;
+    cursor:pointer; font-size:13px;}
+  .mode button.on{background:var(--gold); color:#241a05; font-weight:700;}
+  .btn{border:1px solid var(--gold); background:transparent; color:var(--gold2);
+    padding:8px 16px; border-radius:10px; cursor:pointer; font-size:14px;}
+  .btn:hover{background:rgba(217,179,108,.12);}
+  .btn.primary{background:var(--gold); color:#241a05; font-weight:700; border-color:var(--gold);}
+  .btn.primary:hover{background:var(--gold2);}
+  main{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,440px); gap:18px; margin-top:18px;}
+  @media (max-width:980px){ main{grid-template-columns:1fr;} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px; margin-bottom:12px;}
+  .fields{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:9px;}
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field .lab{font-size:12px; color:var(--sub);}
+  .field select{width:100%; background:var(--card2); color:var(--txt);
+    border:1px solid var(--line); border-radius:8px; padding:7px 8px; font-size:13px; appearance:auto;}
+  .field select:focus{outline:1px solid var(--gold);}
+  .fgroup{border:1px dashed var(--line); border-radius:10px; padding:10px 12px; margin-top:8px;}
+  .fgroup .gtitle{font-size:12px; color:var(--gold); margin-bottom:8px;}
+  .hint{font-size:12px; color:var(--sub); margin-top:8px; line-height:1.6;}
+  .out-card{position:sticky; top:14px; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:16px;}
+  .out-card h2{font-size:16px; color:var(--gold2); margin-bottom:10px;}
+  #promptBox{background:#0d0d12; border:1px solid var(--line); border-radius:10px;
+    padding:14px; min-height:240px; max-height:460px; overflow:auto; line-height:1.9;
+    white-space:pre-wrap; font-size:14px;}
+  .btnrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  .meta{font-size:12px; color:var(--sub); margin-top:10px; line-height:1.7;}
+  .meta b{color:var(--gold2); font-weight:600;}
+  #selfcheck{margin-top:12px; border-top:1px solid var(--line); padding-top:10px;}
+  .sc-line{font-size:13px; line-height:1.8; margin-bottom:6px;}
+  .sc-detail{font-size:12px; color:var(--sub); max-height:260px; overflow:auto;
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin-top:6px;}
+  .ok{color:var(--ok);} .no{color:var(--bad);} .wa{color:var(--warn);}
+  .depo{margin-top:12px; border-top:1px solid var(--line); padding-top:10px; font-size:12px; line-height:1.7;}
+  .depo h3{font-size:13px; color:var(--gold2); margin:8px 0 4px;}
+  .depo .do{color:var(--ok);} .depo .dont{color:var(--bad);}
+  .chip{display:inline-block; font-size:11px; padding:2px 8px; border-radius:6px; margin:2px 3px;
+    border:1px solid var(--bad); color:var(--bad);}
+  .tip{font-size:12px; color:var(--sub); margin-top:10px; line-height:1.7;
+    background:rgba(126,201,139,.07); border:1px solid rgba(126,201,139,.2);
+    border-radius:8px; padding:8px 12px;}
+  .hidden{display:none !important;}
+  details.sec{background:var(--card); border:1px solid var(--line); border-radius:14px;
+    margin-bottom:10px; overflow:hidden;}
+  details.sec summary{cursor:pointer; padding:12px 16px; font-weight:700; color:var(--gold2);
+    list-style:none; display:flex; align-items:center; justify-content:space-between;}
+  details.sec summary::-webkit-details-marker{display:none;}
+  details.sec summary .chev{color:var(--sub); font-size:12px; font-weight:400;}
+  details.sec[open] summary{border-bottom:1px solid var(--line);}
+  details.sec .body{padding:12px 16px 14px;}
+  .sec-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  .sec-head .t{font-weight:700; color:var(--gold2); letter-spacing:.5px;}
+  .sec-desc{font-size:12px; color:var(--sub); margin-right:auto; line-height:1.5;}
+  .compat{margin-top:12px; border-top:1px solid var(--line); padding-top:10px; font-size:12px; line-height:1.7;}
+  .compat h3{font-size:13px; color:var(--gold2); margin:6px 0 4px;}
+  .compat .c-bad{color:var(--bad);} .compat .c-tip{color:var(--warn);} .compat .c-ok{color:var(--ok);}
+  .compat .row{margin:3px 0; padding-left:14px; position:relative;}
+  .compat .row:before{position:absolute; left:0;}
+  .compat .row.bad:before{content:'✖'; color:var(--bad);}
+  .compat .row.tip:before{content:'◆'; color:var(--warn);}
+  .compat .fix{color:var(--sub);}
+  .mini{border:1px solid var(--line); background:var(--card2); color:var(--sub);
+    border-radius:8px; padding:3px 10px; font-size:12px; cursor:pointer;}
+  .mini:hover{color:var(--gold2); border-color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>人像提示词工作室 <span style="font-size:13px;color:var(--sub);">Portrait Prompt Studio</span></h1>
+    <div class="tools">
+      <div class="mode" id="modeBox">
+        <button id="mEN" class="on">EN · v3 超详细</button>
+        <button id="mZH">ZH · 中文叙事</button>
+      </div>
+      <button class="btn" id="clearBtn">清空选项</button>
+      <button class="btn" id="randAll">全部随机</button>
+      <button class="btn primary" id="genBtn">生成提示词</button>
+    </div>
+    <div class="sub">SFW 人像提示词生成器：选维度 → 英文详细提示词 + 中文叙事 + 搭配建议 + 自检。</div>
+    <div class="notice">SFW 全年龄人像：支持婴幼儿、儿童、青少年、成人及老年人；禁止非自愿及露骨内容。未满 18 岁时自动使用适龄日常人像模板，成人风格选项不会进入输出。18–22 岁甜妹仅为原有风格示例。适龄模板支持公寓、卧室、教室、图书馆；其他场景回退公寓。真实感需出图后目视检查。</div>
+  </header>
+
+  <main>
+    <section id="form"></section>
+
+    <section class="out-card">
+      <h2>生成结果 <span id="outTag" style="font-size:12px;color:var(--sub);"></span></h2>
+      <div id="promptBox"></div>
+      <div class="btnrow">
+        <button class="btn primary" id="copyBtn">复制当前</button>
+        <button class="btn" id="copyEN">复制英文</button>
+        <button class="btn" id="copyZH">复制中文</button>
+      </div>
+      <div class="meta" id="meta"></div>
+      <div id="selfcheck"></div>
+      <div class="compat" id="compat"></div>
+      <div class="depo" id="depo"></div>
+      <div class="tip"><b>使用提示：</b>英文模式直接粘贴进 ImageGen（竖构图 3:4 / 2:3 最佳）；中文模式便于你阅读和标注。本页面需在真实浏览器打开（应用内预览会屏蔽脚本）。</div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ================= 双语词库（v:标签 t:中文描述 en:英文短语） ================= */
+function norm(a){return a.map(function(x){
+  if(typeof x==='string') return {v:x,t:x,en:x};
+  if(x.length>=3) return {v:x[0], t:x[1], en:x[2]};
+  return {v:x[0], t:x[0], en:x[1]};  /* 2-elem: [中文label, english] */
+});}
+
+var OPT = {};
+OPT.lens = norm([
+  ['广角','采用广角镜头，空间纵深感强烈','wide-angle lens with strong depth and slightly stretched edges'],
+  ['超广角','极端空间拉伸','ultra-wide lens with extreme spatial stretch'],
+  ['鱼眼','圆形桶状畸变','fisheye lens with circular barrel distortion'],
+  ['长焦压缩','压缩前后景距离','telephoto lens compressing foreground and background'],
+  ['中焦','人像黄金焦段，自然透视','medium focal length, the portrait sweet spot with natural perspective'],
+  ['微距','极端特写，纹理毛孔可见','macro lens extreme close-up, visible skin texture'],
+  ['移轴','选择性对焦，微缩模型感','tilt-shift lens with selective focus, miniature look']
+]);
+OPT.viewpoint = norm([
+  ['低角度仰拍','人物被抬高，压迫张力','low-angle shot looking up, elevating the subject'],
+  ['高角度俯拍','被注视却无力抵抗的脆弱','high-angle shot looking down, a fragile vulnerability'],
+  ['侧后方斜45度','偶然被窥见的一刻','captured from a 45-degree rear-side angle, as if glimpsed by chance'],
+  ['倾斜视角','打破水平线，不安张力','tilted Dutch angle breaking the horizon line'],
+  ['鸟瞰','人物如精致人偶','bird-eye overhead view, the subject like a delicate doll'],
+  ['过肩','前景部分遮挡','over-the-shoulder view with partial foreground occlusion'],
+  ['主观视角','第一人称，代入感强','first-person POV, camera as the eyes'],
+  ['镜面反射','背对落地镜，镜中倒映正面','standing before a floor mirror, the reflection shows her front'],
+  ['框架内','前景框架聚焦','shot through a foreground frame for focus']
+]);
+OPT.shotSize = norm([
+  ['极致特写','仅眼部与唇部入画','extreme macro close-up on the eyes and lips'],
+  ['大特写','面部充满整个画面','extreme close-up, the face filling the frame'],
+  ['特写','头部特写，框到下巴','head close-up framed to the chin'],
+  ['近景','头发与肩部入画','head-and-shoulders close-up'],
+  ['中近景','半身胸上景别','medium close-up, chest-up half-body'],
+  ['半身照','腰部以上半身','medium shot, waist-up half-body'],
+  ['中景','框至胯部以上','medium shot, framed above the hips'],
+  ['中全景','美式镜头，膝盖以上','medium full shot, knee-up American shot'],
+  ['七分身','过膝，小腿以上','cowboy shot, above the calves'],
+  ['全景','全身照，人物通身入画','full-body shot, the whole figure in frame'],
+  ['远景','人物居环境一隅','wide shot, the figure placed in the environment'],
+  ['大远景','人物渺小，环境为主','extreme wide shot, environment dominant, figure tiny']
+]);
+OPT.dof = norm([
+  ['浅景深','浅景深虚化背景','shallow depth of field, softly blurred background'],
+  ['大景深','前后景物清晰','deep focus, everything sharp'],
+  ['选择性对焦','焦点精准落面部','selective focus precisely on the face']
+]);
+OPT.device = norm([
+  ['不使用','','(none)'],
+  ['手机自拍','生活化画质','phone selfie, casual quality'],
+  ['单反微单','高画质质感','DSLR, high-quality texture'],
+  ['胶片相机','颗粒与色彩偏移','film camera, grain and color shift'],
+  ['拍立得','褪色边框质感','polaroid, faded border texture'],
+  ['电影机','电影级画质','cinema camera, cinematic quality']
+]);
+OPT.aspect = norm([
+  ['1:1 方形','正方形构图，居中对称','shot in a square 1:1 aspect ratio'],
+  ['4:5 竖版','Instagram 风竖图，半身/特写主流','shot in a 4:5 vertical aspect ratio'],
+  ['3:4 竖向','杂志/证件竖版','shot in a 3:4 vertical aspect ratio'],
+  ['2:3 竖向','35mm 胶片竖幅，全身友好','shot in a 2:3 vertical film aspect ratio'],
+  ['9:16 竖屏','手机故事/短视频竖屏','shot in a 9:16 vertical phone-screen aspect ratio'],
+  ['5:4 横向','老式相机横幅','shot in a 5:4 horizontal aspect ratio'],
+  ['3:2 横向','135 胶片横幅，环境友好','shot in a 3:2 horizontal aspect ratio'],
+  ['16:9 宽屏','电影宽屏横版','shot in a 16:9 widescreen aspect ratio'],
+  ['2.39:1 电影宽银幕','影院级宽幅','shot in a 2.39:1 cinematic widescreen aspect ratio']
+]);
+
+/* 主光：en 为 4 要素完整句（方向+硬度+色温+皮肤效果） */
+var LIGHT_EN = {
+  '发丝光':'A backlight from behind traces a golden rim along her hair and body edges, with soft warm highlights and clean gradients on the skin, physically consistent cast shadows.',
+  '侧逆光':'A side-back light from behind her lights one contour in gold while the other side sinks into shadow, smooth gradients, physically consistent cast shadows.',
+  '伦勃朗光':'A Rembrandt-style key light from the front-left leaves a small triangular highlight on the shadowed cheek, like a classical painting, smooth gradients, physically consistent cast shadows.',
+  '蝴蝶光':'A soft key light from above casts a gentle butterfly shadow under the nose, Hollywood glamour, even soft highlights.',
+  '分割光':'A hard side light splits face and body into half light and half shadow, crisp contrast, minimal fill.',
+  '环形光':'A ring light from the upper front falls softly and evenly, a natural portrait glow, minimal shadows.',
+  '柔光箱':'A large softbox wraps the whole frame in diffuse light, very few shadows, beauty-shot texture.',
+  '硬光':'A small hard source hits directly with sharp shadows that emphasize contour and texture, high contrast.',
+  '底光':'A light from below lifts upward, mysterious and intimate, soft on the skin.',
+  '剪影光':'A strong backlight turns the subject into a pure black silhouette, only the outline reads.'
+};
+OPT.mainLight = norm([
+  ['发丝光','背光勾勒发丝与身体边缘金色光晕','rim light'],
+  ['侧逆光','侧后方照来，一侧发光一侧沉影','side-back light'],
+  ['伦勃朗光','前方照下，暗侧留三角光区','Rembrandt key light'],
+  ['蝴蝶光','上方照下，鼻下蝶形阴影','butterfly light'],
+  ['分割光','正侧光分半明半暗','split light'],
+  ['环形光','斜上方柔柔落下','ring light'],
+  ['柔光箱','大面积柔光笼罩','softbox'],
+  ['硬光','小光源硬光直射','hard light'],
+  ['底光','从下往上打来','under light'],
+  ['剪影光','强烈背光成剪影','silhouette light']
+]);
+OPT.ambient = norm([
+  ['不使用','','(none)'],
+  ['窗外霓虹','霓虹从侧后方渗入冷色轮廓','neon from behind seeps a cool rim along her shoulder'],
+  ['烛光','烛火轻摇，暖黄光斑浮动','candlelight flickers, warm spots drifting on skin'],
+  ['屏幕光','屏幕冷光映脸','screen light reflects cool on her face'],
+  ['月光','月光落肩头','moonlight rests on her shoulder'],
+  ['电影体积光','体积光穿过空气成光柱','cinematic volumetric light forms beams through air'],
+  ['百叶窗影','百叶窗影斜印身体','blinds cast slanted shadows across the body'],
+  ['蕾丝投影','蕾丝光影投皮肤','lace patterns project onto the skin'],
+  ['蒸汽透光','蒸汽泛朦胧光晕','steam glows with a hazy halo']
+]);
+OPT.colorTone = norm([
+  ['烛光暖','暖调烛光，低明度低饱和','warm candle tone, low brightness, low saturation'],
+  ['钨丝暖','钨丝灯暖调，温馨慵懒','tungsten warm, cozy and lazy'],
+  ['晨昏金光','黄昏金色调，柔和低对比','golden hour, soft low contrast'],
+  ['中性白','中性白，自然真实','neutral white, natural and real'],
+  ['日光清新','日光调，明亮低饱和','daylight, bright low saturation'],
+  ['阴天柔灰','阴天柔灰，忧郁安静','overcast soft grey, melancholy calm'],
+  ['冷白荧光','冷白荧光，疏离压抑','cold white fluorescent, detached'],
+  ['月光冷调','冷调月光，暗部偏蓝','cold moonlight, blue shadows'],
+  ['霓虹混合','霓虹混合，高饱和撞色','neon mix, high saturation clash']
+]);
+OPT.film = norm([
+  ['不使用','','(none)'],
+  ['暖调人像','暖调胶片，细颗粒奶油肤感','warm film, fine grain creamy skin'],
+  ['暖调怀旧','暖黄怀旧，颗粒明显','warm nostalgic, visible grain'],
+  ['高饱和','高饱和胶片，浓郁锐利','high saturation film, rich and sharp'],
+  ['素人感','日常胶片，暖调松弛','casual film, warm relaxed'],
+  ['霓虹夜','霓虹夜胶片，光晕扩散','neon night film, blooming halos'],
+  ['冷调纪实','冷调纪实，低饱和灰调','cold documentary, low saturation grey'],
+  ['昭和复古','昭和复古，褪色暖调','showa retro, faded warm'],
+  ['黑白质感','黑白高对比，粗颗粒','black and white high contrast, coarse grain'],
+  ['梦幻唯美','梦幻柔和，通透仙气','dreamy soft, ethereal']
+]);
+OPT.cine = norm([
+  ['不使用','','(none)'],
+  ['暖柔电影感','奶油柔焦，暖肤色','creamy soft bokeh, warm skin'],
+  ['现代锐利','干净锐利现代电影感','clean sharp modern cinema'],
+  ['经典好莱坞','椭圆焦外，宽银幕蓝眩光','oval bokeh, widescreen blue flare'],
+  ['梦幻奢华','梦幻焦外，人物立体剥离','dreamy bokeh, subject peeled from background'],
+  ['通用人像','奶油柔焦，暖肤色','creamy soft bokeh, warm skin'],
+  ['复古俄头','漩涡焦外，柔和复古','swirly bokeh, soft vintage']
+]);
+
+/* 人物维度 */
+OPT.temperament = norm([
+  ['清纯','innocent'],['御姐','mature-sister'],['可爱','cute'],['呆萌','dopey-cute'],
+  ['高冷','cold-aloof'],['慵懒','lazy'],['冷艳','cold-glam'],['甜美','sweet'],
+  ['飒爽','crisp'],['温柔','gentle'],['知性','intellectual'],['魅惑','charming'],
+  ['叛逆','rebellious'],['文艺','artsy'],['名媛','socialite'],['高贵','noble'],['不食人间烟火','otherworldly'],['危险迷人','dangerously charming']
+]);
+OPT.age = norm(Array.from({length:101}, function(_, age){
+  var labels={18:'18岁女大学生',24:'24岁职场新人',26:'26岁轻熟女',28:'28岁职场女性',30:'30岁优雅熟女'};
+  return [labels[age]||age+'岁', age===0?'infant under one year old':age+'-year-old'];
+}));
+OPT.race = norm([
+  ['东亚美少女','East Asian beauty'],['韩系精致','Korean-style refined'],['日系自然','Japanese natural'],['欧美','Western'],['混血感','mixed-race']
+]);
+OPT.face = norm([
+  ['瓜子脸','oval face'],['鹅蛋脸','soft oval face'],['圆脸','round face'],['小圆脸','small round face'],
+  ['心形脸','heart-shaped face'],['幼态脸','baby-faced'],['网感脸','internet-glam face'],
+  ['猫系脸','cat-like face'],['犬系脸','puppyish face'],['高级脸','high-fashion face']
+]);
+OPT.skin = norm([
+  ['冷白皮','cool fair skin'],['白皙','fair skin'],['奶油肌','creamy fair skin'],['蜜桃粉肌','peachy skin'],
+  ['自然肤色','natural skin tone'],['小麦色','wheat skin'],['古铜色','bronze skin']
+]);
+OPT.texture = norm([['哑光质感','matte'],['自然素肌','natural bare skin'],['水光肌','dewy glass-skin'],['雾面柔焦','soft-focus matte']]);
+OPT.body = norm([
+  ['纤细匀称','slim and balanced'],['苗条骨感','slender bone-thin'],['模特高挑','model tall'],['娇小','petite'],
+  ['沙漏型','hourglass'],['梨形','pear-shaped'],['直筒型','straight'],['丰满匀称','full and balanced'],
+  ['微丰满','softly curvy'],['健美','toned athletic']
+]);
+OPT.leg = norm([['修长笔直','long straight legs'],['蜜大腿','honey thighs'],['腿部比例极佳','excellent leg proportion'],['匀称有力','balanced strong legs'],['筷子腿','slim straight chopstick legs'],['小腿纤细','slender calves']]);
+OPT.firstImp = norm([
+  ['楚楚可怜','pitifully lovely'],['气场强大','powerful aura'],['甜美治愈','sweet and healing'],['生人勿近','keep-distance'],
+  ['如沐春风','spring-breeze warm'],['邻家亲切','girl-next-door warm'],['疏离忧郁','distant and melancholy'],['明艳动人','bright and striking']
+]);
+/* 脸型解剖级补充说明（v3） */
+var FACE_EN = {
+  '瓜子脸':'with a gently tapered chin and softly defined cheekbones',
+  '鹅蛋脸':'with smooth full temples and a small gently pointed chin',
+  '圆脸':'with full baby-fat cheeks and a small gently pointed chin',
+  '小圆脸':'with soft baby-fat cheeks and a round tender jawline',
+  '心形脸':'with a narrow chin and full upper cheeks, kept soft',
+  '幼态脸':'with rounded cheeks and a short soft jaw',
+  '猫系脸':'with slightly upturned outer eye corners and a small pointed chin',
+  '犬系脸':'with round friendly eyes and soft full cheeks',
+  '高级脸':'with refined high cheekbones',
+  '网感脸':'with a small defined chin and plump lips'
+};
+
+OPT.hairLen = norm([['及腰长发','waist-length'],['过胸长发','below-chest long'],['及胸长发','chest-length'],['及肩中长发','shoulder-length'],['锁骨发','collarbone-length'],['齐耳短发','ear-length short'],['短发','short'],['精灵短发','pixie cut']]);
+OPT.hairColor = norm([['黑发','black'],['深棕','dark brown'],['浅棕','light brown'],['栗色','chestnut'],['奶茶色','milk-tea'],['亚麻色','linen'],['金色','blonde'],['白金色','platinum'],['灰蓝色','grey-blue'],['玫瑰金','rose-gold'],['渐变染','gradient-dyed'],['挑染','highlighted'],['挂耳染','under-dyed']]);
+OPT.hairCurl = norm([['直发柔顺','straight sleek'],['自然微卷','naturally wavy'],['波浪卷','wavy curls'],['大卷','big curls'],['羊毛卷','bouncy curls'],['慵懒卷','lazy curls'],['法式烫','French perm'],['蛋卷烫','egg-roll perm'],['公主切','hime-cut'],['微卷内扣','soft inward curl']]);
+OPT.hairTie = norm([['披散','loose flowing'],['高马尾','high ponytail'],['低马尾','low ponytail'],['侧马尾','side ponytail'],['双马尾','twin tails'],['低双马尾','low twin tails'],['丸子头','bun'],['双丸子头','double buns'],['低髻','low bun'],['半扎','half-tied'],['麻花辫','braid'],['鱼骨辫','fishtail braid'],['盘发','updo'],['松散发髻','loose bun'],['中分披发','center-parted loose']]);
+OPT.hairBangs = norm([['齐刘海','blunt bangs'],['空气刘海','airy wispy bangs'],['氧气刘海','oxygen see-through bangs'],['八字刘海','curtain bangs'],['斜刘海','side-swept bangs'],['侧分','side part'],['中分','center part'],['无刘海','no bangs'],['法式刘海','French bangs'],['狗啃刘海','choppy short bangs']]);
+OPT.hairState = norm([['柔顺垂落','falling smoothly'],['随风轻扬','gently lifted by wind'],['几缕碎发拂过脸颊','a few strands brushing the cheek'],['凌乱蓬松','messy and fluffy'],['发梢微翘','tips slightly curled'],['贴脸碎发','strands clinging to the face'],['湿发撩开','wet hair pushed back'],['发丝遮眼','hair shading the eyes']]);
+OPT.hairAcc = norm([
+  ['不使用','','(none)'],
+  ['蝴蝶结发夹','a bow hairclip'],['珍珠发夹','a pearl hairclip'],['发箍','a headband'],['发带','a hair ribbon'],
+  ['鲨鱼夹','a claw clip'],['簪子','a hair stick'],['花朵发饰','a floral hairpiece'],['猫耳发饰','cat-ear hairpins'],
+  ['贝雷帽','a beret'],['皇冠','a small crown'],['花冠','a flower crown'],['面纱','a thin veil'],['草帽','a straw hat'],['棒球帽','a baseball cap']
+]);
+
+OPT.makeup = norm([
+  ['素颜','bare-face no-makeup look'],['裸妆','no-makeup nude look'],['清纯淡妆','light fresh makeup'],['日系透明妆','sheer Japanese makeup'],
+  ['甜妹妆','sweet-girl makeup'],['网感妆','internet-glam makeup'],['纯欲妆','pure-yet-sultry makeup'],['御姐妆','mature-sister bold makeup'],
+  ['港风红唇','HK-style bold red lips'],['欧美妆','Western cut-crease makeup'],['烟熏妆','smoky eyes'],['厌世妆','world-weary makeup']
+]);
+OPT.makeupDetail = norm([['不使用','','(none)'],['无瑕底妆','flawless base'],['自然腮红','natural blush'],['晒伤腮红','sunburn blush across the nose'],['卧蚕提亮','under-eye highlight'],['眼下腮红','under-eye blush'],['玻璃唇','glossy glass lips'],['哑光红唇','matte red lips'],['重眼影','bold eyeshadow'],['浓密睫毛','dense lashes'],['泪痣','a tear mole'],['鼻尖高光','highlight on the nose tip']]);
+OPT.smudge = norm([['不使用','','(none)'],['轻微','slightly smudged, lipstick edge faintly blurred'],['中度','eyeliner smeared, lipstick on cheek'],['重度','makeup smeared across the face']]);
+OPT.nails = norm([['不使用','','(none)'],['精致美甲','delicate manicure'],['法式美甲','French-tip manicure'],['自然素甲','bare neat nails'],['甲油剥落','chipped polish']]);
+
+OPT.emotion = norm([
+  ['害羞','blushing, gaze darting away with a shy smile'],['羞涩','bashful, cheeks pink, eyes lowered'],
+  ['魅惑','eyes hazy, lips hinting a smirk, seductive'],['愉悦','brows relaxed, lips parted, intoxicated with joy'],
+  ['服从','eyes submissive, looking up slightly, waiting'],['俏皮','head tilted, eyes playful'],
+  ['撒娇','coquettish little pout, chin lifted'],['得意','a faint smug smile, chin slightly raised'],
+  ['痛苦','brows faintly furrowed, biting back, eyes reddened'],['惊恐','eyes wide, expression panicked, lips parted'],
+  ['恍惚失神','gaze scattered, expression empty, slightly defocused'],['隐忍','lips pressed, forcing calm, emotion held in the eyes'],
+  ['冷淡','expression cold, gaze drifting, detached'],['慵懒','languid half-lidded look, relaxed and unhurried'],
+  ['惊喜','eyes bright, brows lifted, mouth open in delight'],['认真','focused earnest gaze, calm composure'],
+  ['反差','innocent face hiding a seductive look, restraint and want intertwined']
+]);
+OPT.eye = norm([
+  ['直视镜头','looking straight into the lens'],['勾引','looking up from lowered lids, side-glancing'],
+  ['迷离失神','half-closed, pupils scattered'],['羞耻回避','shyly looking away, cheeks flushed'],
+  ['垂眸','eyelids lowered, gaze toward the ground'],['偷看','peeking sideways at the camera'],
+  ['乞求哀怨','watery eyes looking up, pleading'],['含情脉脉','affectionate lingering gaze'],
+  ['放空虚无','empty gaze to nowhere'],['惊恐','eyes wide, fixed'],['挑逗','staring straight, provocative'],['湿润含泪','rims red, glistening with tears']
+]);
+OPT.mouth = norm([['闭合','lips gently pressed, a faint smile'],['微笑','a soft warm smile'],['抿嘴','lips pressed together'],['微张','lips slightly parted, breath light'],['嘟嘴','pouting lips'],['咬唇','teeth gently biting the lower lip'],['吐舌','tongue tip lightly out'],['舔唇','tongue slowly across the lower lip']]);
+
+/* 服装（SFW 子集，含 en） */
+var CLOTH = {
+  '上衣': [
+    ['奶白色罗纹针织短款吊带背心','奶白色罗纹针织短款吊带背心，短至胸下缘','cream ribbed knit crop camisole ending just below the bust'],
+    ['黑色一字肩上衣','黑色一字肩，露锁骨与圆润肩头','black off-shoulder top revealing collarbone and round shoulders'],
+    ['深蓝挂脖上衣','布料绕颈交叉，背部裸露','deep-blue halter top crossing at the neck, open back'],
+    ['白色棉质宽松衬衫','领口微敞，袖口挽至小臂','white loose cotton shirt, two buttons open, sleeves rolled'],
+    ['驼色羊绒开衫','扣子全敞，衣摆垂至大腿','camel cashmere cardigan worn open, hem to mid-thigh'],
+    ['深灰西装外套','垫肩利落，收腰剪裁','charcoal blazer with sharp shoulders, tapered waist'],
+    ['卡其风衣','双排扣，腰带随意系结','khaki trench, double-breasted, belt loosely tied'],
+    ['黑色高领毛衣','领口包裹颈部，厚实柔软','black turtleneck, snug at the neck, thick and soft'],
+    ['白色丝质衬衫','垂顺泛柔和光泽','white silk shirt, smooth with a soft sheen'],
+    ['淡粉裹身上衣','交叉系带收出腰线','pale-pink wrap top, tied to define the waist'],
+    ['白色蕾丝吊带','细肩带，蕾丝花边','white lace camisole, thin straps, lace trim'],
+    ['浅蓝牛仔外套','做旧质感，袖子随意','light-blue denim jacket, worn texture, sleeves loose'],
+    ['黑色机车皮夹克','拉链斜襟，硬朗轮廓','black leather biker jacket, asymmetric zip, sharp outline'],
+    ['灰色罗纹针织背心','贴身勾勒肩背','grey ribbed knit vest hugging the shoulders']
+  ],
+  '下装': [
+    ['深灰百褶短裙','裙摆仅覆大腿根部','charcoal pleated mini skirt covering just the upper thigh'],
+    ['黑色紧身短裙','包裹臀部与大腿','black tight mini skirt hugging hips and thighs'],
+    ['米色包臀裙','过膝，贴合曲线','beige pencil skirt below the knee, following every curve'],
+    ['白色网球裙','内置打底，百褶散开','white tennis skirt with built-in shorts, pleats spreading'],
+    ['黑色牛仔热裤','毛边，仅覆大腿根','black denim shorts with frayed hem at the upper thigh'],
+    ['米白高腰阔腿裤','腰线至肚脐上','cream high-waist wide-leg trousers above the navel'],
+    ['深灰瑜伽裤','紧贴双腿','charcoal yoga pants clinging to the legs'],
+    ['浅蓝低腰牛仔裤','低腰露胯骨','light-blue low-rise jeans showing the hip bone'],
+    ['白色纱裙','层叠蓬松垂踝','white layered tulle skirt, fluffy to the ankle']
+  ],
+  '连衣裙': [
+    ['深蓝灰缎面吊带裙','细肩带滑肩，侧面高开衩','slate-blue satin slip dress, straps slipping, high side slit'],
+    ['黑色针织连衣裙','从胸到膝紧贴曲线','black knit dress hugging from chest to knee'],
+    ['酒红裹身裙','低领交叉，侧腰系结','wine wrap dress, low crossover, tied at the side'],
+    ['经典小黑裙','无袖方领，及膝微展','classic little black dress, square neck, knee-length'],
+    ['浅蓝条纹衬衫裙','领口微敞，腰带收腰','light-blue striped shirt dress, open collar, belted'],
+    ['碎花茶歇裙','低领交叉，荷叶袖','floral tea dress, low crossover, ruffle sleeves'],
+    ['白色缎面吊带长裙','拖地，背交叉','white satin slip gown to the floor, crossed back']
+  ],
+  '职业制服': [
+    ['深蓝西式校服','白衬衫蝴蝶结，格子百褶裙及膝','navy school uniform, white shirt with bow, plaid knee skirt'],
+    ['白色水手服','深蓝大翻领，红领巾','white sailor uniform, navy collar, red scarf'],
+    ['职场白领套装','白衬衫塞黑包臀裙','office set, white shirt tucked into black pencil skirt'],
+    ['经典黑白女仆装','荷叶边围裙，蕾丝头饰','classic black-white maid dress, ruffle apron, lace headpiece'],
+    ['深蓝空姐制服','红领结，贝雷帽','navy flight attendant uniform, red bow, beret'],
+    ['红丝绒旗袍','立领盘扣，侧高开衩','red velvet qipao, stand collar, high side slit'],
+    ['白色交领汉服','淡绿齐胸襦裙，披帛','white crossed-collar hanfu, pale-green ru skirt, shawl'],
+    ['白色护士服','护士帽，浅粉领','white nurse uniform, cap, pale-pink collar']
+  ]
+};
+OPT.clothCat = norm(['上衣','下装','连衣裙','职业制服']);
+OPT.clothItem = []; /* 动态填充 */
+OPT.clothBottom = [];
+OPT.clothMat = norm([
+  ['不使用','','(none)'],
+  ['棉质','棉质吸光，柔和哑光','cotton absorbing light, soft matte'],
+  ['针织','罗纹凹凸纹理','ribbed knit with fine texture'],
+  ['牛仔','斜纹肌理侧光可见','denim twill texture visible in side light'],
+  ['雪纺','轻薄通透，逆光近透明','chiffon sheer, nearly transparent backlit'],
+  ['真丝','珍珠光泽，丝面流动光带','silk with pearlescent sheen, flowing light bands'],
+  ['缎面','侧逆光明暗渐变','satin with gradient sheen in side-back light'],
+  ['蕾丝','镂空投细密花纹影','lace casting fine patterned shadows'],
+  ['薄纱','逆光近透明','tulle nearly transparent backlit'],
+  ['丝绒','褶皱深暗，高光低调暖','velvet with deep folds, low warm highlights'],
+  ['皮革','锐利高光，暗部近黑','leather with sharp highlights, near-black shadows'],
+  ['羊绒','逆光柔和轮廓光晕','cashmere with soft rim light backlit']
+]);
+OPT.clothPattern = norm([['不使用','','(none)'],['条纹','stripes'],['格子','plaid'],['维希格','gingham'],['碎花','floral'],['波点','polka dots'],['千鸟格','houndstooth'],['扎染','tie-dye'],['渐变','gradient'],['豹纹','leopard'],['色块拼接','color-block']]);
+OPT.clothDeco = norm([['不使用','','(none)'],['荷叶边','ruffles'],['压褶','pleats'],['蝴蝶结','bow'],['刺绣','embroidery'],['亮片','sequins'],['铆钉','studs'],['流苏','fringe'],['蕾丝镶边','lace trim'],['泡泡袖','puff sleeves'],['珍珠装饰','pearl trim'],['镂空蕾丝','cutout lace']]);
+OPT.clothLayer = norm([
+  ['不使用','','(none)'],
+  ['外套披肩头','外套随意披肩','jacket casually draped over shoulders'],
+  ['衣摆腰间打结','衬衫衣摆腰间打结','shirt hem tied at the waist'],
+  ['法式半塞','衣摆法式半塞下装','front-tucked into the bottom'],
+  ['外层敞开露内搭','外层敞开露内搭','outer layer open over the inner'],
+  ['单肩滑落不对称','单肩滑落不对称穿法','one shoulder slipping, asymmetric'],
+  ['袖口卷小臂','袖口卷至小臂','sleeves rolled to the forearm'],
+  ['细腰带束腰线','细腰带束出腰线','thin belt defining the waist'],
+  ['驼色低领背心','外搭驼色低领背心','camel low-neck vest layered on top']
+]);
+OPT.shoes = norm([
+  ['不使用','','(none)'],
+  ['银色细高跟','银色细跟，踝带绕脚踝','silver stilettos with ankle straps'],
+  ['黑色尖头高跟','鞋面弧线延脚背','black pointed heels along the instep'],
+  ['裸色踝带高跟','裸色踝带扣侧','nude ankle-strap heels buckled at the side'],
+  ['黑色过膝长靴','靴筒贴小腿大腿','black thigh-high boots hugging the legs'],
+  ['黑色马丁靴','八孔系带厚底','black eight-hole martens with thick sole'],
+  ['白色厚底运动鞋','鞋底增高','white platform sneakers'],
+  ['黑色漆皮乐福','金属马衔扣','black patent loafers with a horsebit'],
+  ['芭蕾平底','缎面系带绕踝','satin ballet flats tied at the ankle'],
+  ['赤脚','脚背弧优雅，脚趾整齐','barefoot, elegant arch, toes aligned']
+]);
+OPT.socks = norm([
+  ['不使用','','(none)'],
+  ['肉色连裤袜','轻薄如第二层肌肤','skin-tone tights like a second skin'],
+  ['黑色连裤袜','哑光紧贴','matte black tights clinging to the legs'],
+  ['黑色渔网袜','网眼大腿至踝','black fishnets from thigh to ankle'],
+  ['黑色过膝袜','袜口收大腿中','black thigh-highs at mid-thigh'],
+  ['白色蕾丝过膝袜','蕾丝翻折','white lace-top thigh-highs'],
+  ['白色小腿袜','袜口膝盖下','white knee socks below the knee'],
+  ['白色及踝袜','荷叶边翻出','white ankle socks with ruffle'],
+  ['黑色吊带袜','吊袜带扣袜口','black hold-ups with garter clasps']
+]);
+OPT.accessory = norm([
+  ['不使用','','(none)'],
+  ['纤细锁骨链贴锁骨','thin clavicle chain on the collarbone'],
+  ['多层项链垂锁骨间','layered necklaces on the collarbone'],
+  ['银色耳环发间轻晃','silver earrings swaying by the ear'],
+  ['珍珠耳坠垂耳畔','pearl drops at the ear'],
+  ['金色身体链沿腰线','gold body chain along the waist'],
+  ['手腕叠戴细手链','stacked thin bracelets on the wrist'],
+  ['极细黑皮带松系胯骨','thin black belt loosely at the hips'],
+  ['细戒指指间','a thin ring on the finger'],
+  ['纤细脚链绕脚踝','delicate anklet around the ankle'],
+  ['黑色丝绒项圈喉下','black velvet choker at the throat']
+]);
+
+OPT.poseCat = norm(['静态姿势','动态动作','过渡姿态','挑逗姿态']);
+var POSES = {
+  '静态姿势': [
+    ['臣服跪姿','双膝跪地，双手背身后，脊背挺直微低头'],
+    ['床边坐','坐床沿，双腿垂下脚尖点地'],
+    ['椅坐交叠','靠椅中，双腿交叠鞋尖轻晃'],
+    ['并腿侧坐','双腿并拢侧坐，手搭膝上'],
+    ['抱膝坐','双膝收拢抱胸前，脸侧枕膝'],
+    ['直立','笔直站立，重心平稳手垂身侧'],
+    ['叉腰','单手叉腰，重心落一侧肩线微斜'],
+    ['背手','双手背后站立，肩胛微收'],
+    ['靠墙','背靠墙站立，重心落一腿'],
+    ['倚窗','侧身倚窗框，手肘撑台'],
+    ['镜前','站落地镜前，手垂身侧'],
+    ['仰卧','仰面平躺，双臂摊开'],
+    ['侧卧','侧身蜷卧，手枕脸侧'],
+    ['大字摊','大字仰躺，四肢舒展']
+  ],
+  '动态动作': [
+    ['走向镜头','正朝镜头走来，步伐从容'],
+    ['背向离开','背对缓步离开，边走边回头'],
+    ['回眸行走','行走中回眸，发丝扬起'],
+    ['雨中行走','雨中行走，水花溅起'],
+    ['高跟摇曳','踩高跟行走，腰臀摇曳'],
+    ['回眸奔跑','奔跑中回望'],
+    ['裙摆飞扬','奔跑中裙摆掀起'],
+    ['原地跃起','原地跃起，裙摆发丝扬'],
+    ['慢舞','独自慢舞，手臂划弧'],
+    ['转圈','原地转圈，裙摆划圆'],
+    ['出水瞬间','从水中起身，水顺身落']
+  ],
+  '过渡姿态': [
+    ['蒙头脱衣','上衣蒙头拉起，露一截腰腹'],
+    ['缓慢解扣','手指缓解胸前纽扣'],
+    ['肩带滑落','一侧肩带滑落，指尖勾回'],
+    ['丝袜卷大腿','丝袜卷至大腿中，整袜口'],
+    ['回眸','身体背对，脸转回看镜头'],
+    ['半转身','半转身，侧影正脸各半'],
+    ['扭腰回头','扭腰回头，脊背弯曲线'],
+    ['弯腰捡物','弯腰捡物，臀朝镜头'],
+    ['撑床起身','双手撑床，上身抬起']
+  ],
+  '挑逗姿态': [
+    ['曲线叉腰','侧身站出曲线，单手叉腰'],
+    ['回眸放电','回眸看镜头，眼波流转'],
+    ['咬唇','指尖触唇，作咬唇状'],
+    ['舔唇','舌尖轻舔下唇'],
+    ['抚摸大腿','手掌沿大腿外侧滑过'],
+    ['托胸','双手轻托胸部'],
+    ['对镜摆姿','对镜摆撩人姿势'],
+    ['飞吻','指尖触唇，送飞吻']
+  ]
+};
+OPT.poseExtra = norm([
+  ['不使用','','(none)'],
+  ['手指搭拉链','fingers resting on the zipper pull'],
+  ['手伸背后解扣','one hand reaching behind to undo buttons'],
+  ['勾裤腰','thumb hooked on the waistband edge'],
+  ['抓床单','fingers gripping the bedsheet'],
+  ['指尖轻触唇边','fingertips lightly touching the lips']
+]);
+/* 姿态英文（用于 EN 模式） */
+var POSE_EN = {
+ '臣服跪姿':'kneeling with both hands behind her back, spine straight, head slightly lowered',
+ '床边坐':'sitting on the bed edge, legs hanging, toes touching the floor',
+ '椅坐交叠':'leaning in a chair, legs crossed, shoe tip swaying',
+ '并腿侧坐':'sitting with legs together to the side, hand on knee',
+ '抱膝坐':'hugging knees to chest, cheek resting on knees',
+ '直立':'standing upright, weight balanced, hands at sides',
+ '叉腰':'one hand on hip, weight on one side, shoulder tilted',
+ '背手':'standing with hands behind back, shoulders slightly drawn',
+ '靠墙':'leaning against a wall, weight on one leg',
+ '倚窗':'leaning by the window frame, elbow on the sill',
+ '镜前':'standing before a floor mirror, hands at sides',
+ '仰卧':'lying on her back, arms spread',
+ '侧卧':'curling on her side, hand under her cheek',
+ '大字摊':'lying flat, limbs spread',
+ '走向镜头':'walking toward the camera, calm steps',
+ '背向离开':'walking away, looking back over shoulder',
+ '回眸行走':'turning back mid-walk, hair lifted',
+ '雨中行走':'walking in rain, splashes rising',
+ '高跟摇曳':'walking in heels, hips swaying',
+ '回眸奔跑':'running, looking back at camera',
+ '裙摆飞扬':'running, skirt lifted by wind',
+ '原地跃起':'jumping in place, skirt and hair rising',
+ '慢舞':'dancing slowly alone, arms tracing arcs',
+ '转圈':'spinning in place, skirt drawing a circle',
+ '出水瞬间':'rising from water, droplets sliding down',
+ '蒙头脱衣':'pulling top over head, revealing a strip of waist',
+ '缓慢解扣':'fingers slowly undoing chest buttons',
+ '肩带滑落':'one strap slipping, finger hooking it back',
+ '丝袜卷大腿':'rolling stockings to mid-thigh, adjusting the band',
+ '回眸':'body turned away, face looking back',
+ '半转身':'half-turned, profile and front each half',
+ '扭腰回头':'twisting waist, looking back, curved spine',
+ '弯腰捡物':'bending to pick something, hips toward camera',
+ '撑床起身':'hands on bed, pushing upper body up',
+ '曲线叉腰':'side stance showing curves, one hand on hip',
+ '回眸放电':'looking back at camera, eyes sparkling',
+ '咬唇':'finger to lips, biting gently',
+ '舔唇':'tongue lightly across lower lip',
+ '抚摸大腿':'palm sliding along outer thigh',
+ '托胸':'both hands gently cupping chest',
+ '对镜摆姿':'posing seductively before mirror',
+ '飞吻':'finger to lips, blowing a kiss'
+};
+
+OPT.scene = norm([
+  ['卧室','简约卧室，白床单微皱，淡紫帘半掩','simple bedroom, slightly wrinkled white sheets, pale curtains half drawn'],
+  ['酒店套房','落地窗前城市夜景虚化冷光斑','hotel suite before floor-to-ceiling windows, city lights blurred to cool spots'],
+  ['教室','放学后教室，荧光灯黑板','after-school classroom, fluorescent lights, blackboard'],
+  ['图书馆','书架间，暖黄台灯旧书','library among shelves, warm desk lamp, old books'],
+  ['办公室','百叶窗影落桌面，显示器微光','office, blind shadows on desk, monitor glow'],
+  ['车内','仪表盘微光，路灯光交替','inside a car, dashboard glow, passing streetlights'],
+  ['便利店','深夜便利店，冷柜灯亮','late-night convenience store, bright cooler lights'],
+  ['夜店','彩色霓虹频闪，人群虚化','nightclub, colored neon strobe, blurred crowd'],
+  ['公寓','暖黄灯光生活杂物，窗台绿植','apartment, warm light, lived-in clutter, windowsill plant'],
+  ['天台','城市夜景星空，夜风','rooftop, city night and stars, night breeze'],
+  ['海边','海浪拍岸，落日余晖','seaside, waves on shore, sunset glow'],
+  ['夜晚公园','路灯树影，长椅草地','night park, streetlamp and tree shadows, bench on grass'],
+  ['和室','障子纸柔光，榻榻米','Japanese room, soft light through shoji, tatami'],
+  ['神社','朱红鸟居石灯笼，暮色','shrine, vermilion torii, stone lanterns, dusk'],
+  ['影棚','柔光箱背景纸，地反光板','studio, softboxes and backdrop paper, floor reflector'],
+  ['水下','波光穿水，光折射','underwater, light through surface, refracted'],
+  ['咖啡厅','窗边卡座，暖灯木桌','cafe by the window, warm lamps, wooden table'],
+  ['温室花房','玻璃顶棚，绿植光影','greenhouse under glass, plant dappled light'],
+  ['化妆间','镜前灯带，台上瓶罐','dressing room, mirror strip lights, bottles on the counter'],
+  ['地铁站','站台灯光，隧道纵深','subway platform, platform lights, deep tunnel'],
+  ['浴室','瓷砖白墙，水汽镜面','bathroom, white tile, misty mirror'],
+  ['雪地','雪原反射冷光','snowfield reflecting cold light'],
+  ['泳池边','水面反光，池砖蓝','poolside, water reflections on blue tiles'],
+  ['老房子','旧木窗格，斑驳墙面','old house, wooden window grid, mottled walls'],
+  ['楼梯间','水泥台阶，侧窗光','stairwell, concrete steps, side-window light'],
+  ['花园','繁花绿荫，斑驳阳光','garden, lush flowers, dappled sunlight']
+]);
+OPT.prop = norm([
+  ['不使用','','(none)'],
+  ['红酒杯','红酒搁台面泛暗光','a wine glass on the table, dark sheen'],
+  ['清酒','清酒与杯摆矮几','a sake bottle and cup on the low table'],
+  ['香烟','指间细烟，烟袅袅','a slim cigarette between fingers, smoke rising'],
+  ['蜡烛','几支蜡烛旁燃，焰轻摇','candles burning nearby, flames flickering'],
+  ['冰块','玻璃杯中冰泛冷光','ice cubes in a glass, cold glint'],
+  ['玫瑰花瓣','散落身侧','rose petals scattered beside her'],
+  ['书籍','摊开的书在一旁','an open book nearby'],
+  ['眼镜','圆框眼镜握指间','round-frame glasses in hand'],
+  ['枕头','枕头堆身后','pillows piled behind'],
+  ['手机','手机举脸侧屏亮','phone raised by her face, screen lit'],
+  ['拍立得','拍立得夹指间','a polaroid between fingers'],
+  ['单反相机','单反挂颈','a DSLR around the neck'],
+  ['猫','猫卧床边尾轻摆','a cat at the bedside, tail swaying'],
+  ['耳机','头戴耳机挂颈','headphones around the neck'],
+  ['游戏手柄','手柄搁膝边','a game controller by the knee'],
+  ['花束','捧一束鲜花','holding a bouquet of fresh flowers'],
+  ['折扇','折扇半掩唇边','a folding fan half-covering the lips'],
+  ['透明伞','透明伞滴着雨珠','a clear umbrella beaded with rain'],
+  ['奶茶','奶茶吸管近唇','a milk-tea cup, straw near the lips'],
+  ['咖啡杯','马克杯暖手','a mug warming her hands'],
+  ['相片','指间夹一张旧照','an old photo print held between fingers'],
+  ['气球','手里牵一只气球','holding a single balloon'],
+  ['泡泡','肥皂泡浮空','soap bubbles floating in the air']
+]);
+OPT.weather = norm([
+  ['不使用','','(none)'],
+  ['晴空万里','天气晴好阳光明亮','clear sky, bright sun'],
+  ['细雨斜落','细雨斜落空气微凉','light slanting rain, cool air'],
+  ['阴天柔光','阴天云层柔光','overcast soft light'],
+  ['细雪飘落','细雪轻轻飘','fine snow drifting'],
+  ['夜色深沉','夜色深沉灯火点','deep night, dotted lights'],
+  ['黄昏暮色','黄昏染半边天','dusk tinting half the sky'],
+  ['蒸汽朦胧','蒸汽朦胧升腾','steam rising hazily'],
+  ['水光浮动','水面波光浮','shimmering water surface'],
+  ['薄雾',"薄雾轻笼，光线漫射",'light mist, softly diffused light'],
+  ['微风',"微风拂发，衣角轻扬",'gentle breeze lifting hair and hem'],
+  ['雨后初晴',"雨后初晴，地面反光",'after-rain clearing, wet ground reflecting'],
+  ['漫天晚霞',"晚霞满天，暖红染云",'a sky full of sunset glow, warm red clouds']
+]);
+
+OPT.comp = norm([
+  ['三分法','三分法构图','rule of thirds'],
+  ['对角线','对角线布局斜跨画面','diagonal layout crossing the frame'],
+  ['框架构图','前景画框聚焦','foreground frame focusing'],
+  ['镜面反射','镜框分画面内外','mirror framing inside and outside'],
+  ['负空间','大面积留白','large negative space'],
+  ['引导线','环境线汇聚面部','leading lines to the face'],
+  ['中心对称','人物居中对称','centered symmetry'],
+  ['前景遮挡','前景虚化遮挡','foreground occlusion'],
+  ['倾斜构图','倾斜打破水平','tilted breaking horizon'],
+  ['黄金分割','人物落黄金分割点','the subject on the golden-ratio point'],
+  ['L型构图','L 型线条围合人物','L-shaped lines enclosing the subject'],
+  ['窗框','窗框取景人物在内','the subject framed within a window']
+]);
+OPT.compPos = norm([['居中','centered in frame'],['偏左三分之一','left third with right breathing room'],['偏右三分之一','right third with left breathing room'],['左下角','lower-left with upper-right space'],['右下角','lower-right with upper-left space'],['向画外延伸','body lines extending off-frame']]);
+OPT.styleTag = norm([['不使用','','(none)'],['电影剧照','film still'],['时尚大片','fashion editorial'],['闺房摄影','boudoir photography'],['拍立得快照','polaroid snapshot'],['复古照','vintage photo'],['抓拍纪实','candid documentary'],['街头','street snap'],['夜景','night scene'],['影棚','studio shot'],['写真偶像','idol photobook'],['素人自拍','amateur selfie']]);
+OPT.tattoo = norm([['不使用','','(none)'],['小爱心','small heart'],['樱花','sakura'],['猫爪印','cat paw'],['蛇','snake'],['大玫瑰','big rose'],['腰链','waist chain'],['黑桃Q','queen of spades'],['毛笔字','brush calligraphy'],['昇龙','ascending dragon']]);
+OPT.tattooPos = norm([['锁骨','collarbone'],['小腹','lower belly'],['后颈','back of neck'],['大腿内侧','inner thigh'],['臀部','hips'],['手腕','wrist'],['脚踝','ankle'],['胸口','chest'],['背部','back']]);
+OPT.imperf = norm([
+  ['不使用','','(none)'],
+  ['雀斑','脸颊细碎雀斑','freckles scattered on the cheeks'],
+  ['美人痣','唇角一粒美人痣','a beauty mark at the lip corner'],
+  ['自然毛孔','皮肤保留自然毛孔','natural skin pores visible'],
+  ['淡疤','膝盖一道淡旧疤','a faint old scar on the knee'],
+  ['锁骨突出','锁骨线条突出','defined collarbone lines'],
+  ['胶片颗粒','轻微胶片颗粒','slight film grain'],
+  ['镜头眩光','边缘轻微眩光','slight lens flare at the edge'],
+  ['轻微失焦','焦点略失焦','slightly defocused'],
+  ['褶皱床单','身下床单压褶','wrinkled sheets under her'],
+  ['湿发贴脖','湿发贴后颈','wet hair clinging to the nape'],
+  ['潮红','面颊微潮红','faint blush on the cheeks'],
+  ['汗水','细密汗珠滑落','fine sweat beads sliding']
+]);
+
+/* 风格预设（双语） */
+var STYLE_PRESETS = {
+  '法式优雅': {clothCat:'上衣', clothItem:'上衣｜白色丝质衬衫', clothBottom:'下装｜米白高腰阔腿裤', clothMat:'真丝', clothLayer:'不使用', shoes:'裸色踝带高跟', socks:'不使用', accessory:'纤细锁骨链贴锁骨'},
+  '千禧辣妹': {clothCat:'上衣', clothItem:'上衣｜奶白色罗纹针织短款吊带背心', clothBottom:'下装｜黑色牛仔热裤', clothMat:'棉质', clothLayer:'不使用', shoes:'白色厚底运动鞋', socks:'不使用', accessory:'金色身体链沿腰线'},
+  '哥特暗黑': {clothCat:'上衣', clothItem:'上衣｜黑色高领毛衣', clothBottom:'下装｜黑色紧身短裙', clothMat:'丝绒', clothLayer:'不使用', shoes:'黑色过膝长靴', socks:'不使用', accessory:'十字架吊坠垂锁骨间', clothDeco:'蕾丝镶边'},
+  '美式学院': {clothCat:'上衣', clothItem:'上衣｜白色棉质宽松衬衫', clothBottom:'下装｜深灰百褶短裙', clothMat:'不使用', clothLayer:'驼色低领背心', shoes:'黑色漆皮乐福', socks:'白色小腿袜', accessory:'不使用'},
+  '极简主义': {clothCat:'上衣', clothItem:'上衣｜黑色高领毛衣', clothBottom:'下装｜米白高腰阔腿裤', clothMat:'棉质', clothLayer:'不使用', shoes:'不使用', socks:'不使用', accessory:'银色耳环发间轻晃'},
+  '芭蕾风': {clothCat:'上衣', clothItem:'上衣｜淡粉裹身上衣', clothBottom:'下装｜白色纱裙', clothMat:'不使用', clothLayer:'不使用', shoes:'芭蕾平底', socks:'不使用', accessory:'不使用', hairAcc:'花朵发饰'},
+  '复古港风': {clothCat:'上衣', clothItem:'上衣｜白色棉质宽松衬衫', clothBottom:'下装｜浅蓝低腰牛仔裤', clothMat:'不使用', clothLayer:'宽垫肩西装披肩', shoes:'不使用', socks:'不使用', accessory:'银色耳环发间轻晃', clothPattern:'条纹'},
+  '办公室海妖': {clothCat:'上衣', clothItem:'上衣｜白色丝质衬衫', clothBottom:'下装｜黑色紧身短裙', clothMat:'真丝', clothLayer:'外套披肩头', shoes:'黑色尖头高跟', socks:'黑色连裤袜', accessory:'黑色丝绒项圈喉下'}
+};
+OPT.stylePreset = norm(['不使用'].concat(Object.keys(STYLE_PRESETS)));
+
+/* 整套人设套装：跨段一次性填好，保证自洽 */
+var OVERALL_PRESETS = {
+  '甜妹居家（推荐）': {
+    lens:'中焦', viewpoint:'侧后方斜45度', shotSize:'半身照', dof:'浅景深', device:'单反微单',
+    mainLight:'柔光箱', ambient:'不使用', colorTone:'晨昏金光', film:'暖调人像', cine:'不使用',
+    temperament:'甜美', age:'20岁', race:'东亚美少女', face:'圆脸', skin:'白皙', texture:'自然素肌', body:'纤细匀称', leg:'修长笔直', firstImp:'甜美治愈',
+    hairLen:'及肩中长发', hairColor:'黑发', hairCurl:'直发柔顺', hairTie:'披散', hairBangs:'空气刘海', hairState:'几缕碎发拂过脸颊', hairAcc:'不使用',
+    makeup:'清纯淡妆', makeupDetail:'自然腮红', smudge:'不使用', nails:'自然素甲',
+    emotion:'害羞', eye:'羞耻回避', mouth:'微笑',
+    clothCat:'上衣', clothItem:'上衣｜奶白色罗纹针织短款吊带背心', clothBottom:'不使用', clothMat:'针织', clothPattern:'不使用', clothDeco:'不使用', clothLayer:'不使用', shoes:'赤脚', socks:'不使用', accessory:'纤细锁骨链贴锁骨',
+    poseCat:'静态姿势', pose:'直立', poseExtra:'不使用',
+    scene:'卧室', prop:'枕头', weather:'不使用', comp:'三分法', compPos:'居中', styleTag:'素人自拍', aspect:'4:5 竖版', tattoo:'不使用', imperf1:'自然毛孔', imperf2:'不使用'
+  },
+  '法式优雅': {
+    lens:'中焦', viewpoint:'过肩', shotSize:'半身照', dof:'浅景深', device:'单反微单',
+    mainLight:'伦勃朗光', ambient:'不使用', colorTone:'中性白', film:'暖调人像', cine:'通用人像',
+    temperament:'知性', age:'24岁职场新人', race:'东亚美少女', face:'鹅蛋脸', skin:'白皙', texture:'自然素肌', body:'纤细匀称', leg:'修长笔直', firstImp:'如沐春风',
+    hairLen:'锁骨发', hairColor:'深棕', hairCurl:'慵懒卷', hairTie:'披散', hairBangs:'八字刘海', hairState:'柔顺垂落', hairAcc:'不使用',
+    makeup:'清纯淡妆', makeupDetail:'哑光红唇', smudge:'不使用', nails:'法式美甲',
+    emotion:'愉悦', eye:'直视镜头', mouth:'微笑',
+    clothCat:'上衣', clothItem:'上衣｜白色丝质衬衫', clothBottom:'下装｜米白高腰阔腿裤', clothMat:'真丝', clothPattern:'不使用', clothDeco:'不使用', clothLayer:'不使用', shoes:'裸色踝带高跟', socks:'不使用', accessory:'纤细锁骨链贴锁骨',
+    poseCat:'静态姿势', pose:'倚窗', poseExtra:'不使用',
+    scene:'公寓', prop:'不使用', weather:'不使用', comp:'三分法', compPos:'偏左三分之一', styleTag:'时尚大片', aspect:'3:4 竖向', tattoo:'不使用', imperf1:'不使用', imperf2:'不使用'
+  },
+  '冷艳夜景': {
+    lens:'中焦', viewpoint:'倾斜视角', shotSize:'中景', dof:'浅景深', device:'电影机',
+    mainLight:'分割光', ambient:'窗外霓虹', colorTone:'霓虹混合', film:'霓虹夜', cine:'现代锐利',
+    temperament:'冷艳', age:'24岁职场新人', race:'东亚美少女', face:'心形脸', skin:'冷白皮', texture:'哑光质感', body:'纤细匀称', leg:'修长笔直', firstImp:'生人勿近',
+    hairLen:'及腰长发', hairColor:'黑发', hairCurl:'直发柔顺', hairTie:'披散', hairBangs:'无刘海', hairState:'柔顺垂落', hairAcc:'不使用',
+    makeup:'港风红唇', makeupDetail:'重眼影', smudge:'不使用', nails:'精致美甲',
+    emotion:'冷淡', eye:'放空虚无', mouth:'抿嘴',
+    clothCat:'连衣裙', clothItem:'连衣裙｜酒红裹身裙', clothBottom:'不使用', clothMat:'真丝', clothPattern:'不使用', clothDeco:'不使用', clothLayer:'不使用', shoes:'黑色尖头高跟', socks:'不使用', accessory:'黑色丝绒项圈喉下',
+    poseCat:'静态姿势', pose:'靠墙', poseExtra:'不使用',
+    scene:'天台', prop:'不使用', weather:'夜色深沉', comp:'对角线', compPos:'偏右三分之一', styleTag:'电影剧照', aspect:'16:9 宽屏', tattoo:'不使用', imperf1:'胶片颗粒', imperf2:'不使用'
+  },
+  '学院清纯': {
+    lens:'中焦', viewpoint:'侧后方斜45度', shotSize:'中近景', dof:'浅景深', device:'单反微单',
+    mainLight:'环形光', ambient:'不使用', colorTone:'日光清新', film:'素人感', cine:'通用人像',
+    temperament:'清纯', age:'18岁女大学生', race:'东亚美少女', face:'小圆脸', skin:'白皙', texture:'自然素肌', body:'纤细匀称', leg:'修长笔直', firstImp:'甜美治愈',
+    hairLen:'及肩中长发', hairColor:'黑发', hairCurl:'直发柔顺', hairTie:'高马尾', hairBangs:'空气刘海', hairState:'随风轻扬', hairAcc:'不使用',
+    makeup:'裸妆', makeupDetail:'自然腮红', smudge:'不使用', nails:'自然素甲',
+    emotion:'俏皮', eye:'直视镜头', mouth:'微笑',
+    clothCat:'职业制服', clothItem:'职业制服｜深蓝西式校服', clothBottom:'不使用', clothMat:'棉质', clothPattern:'不使用', clothDeco:'不使用', clothLayer:'不使用', shoes:'不使用', socks:'白色小腿袜', accessory:'不使用',
+    poseCat:'静态姿势', pose:'并腿侧坐', poseExtra:'不使用',
+    scene:'教室', prop:'书籍', weather:'不使用', comp:'三分法', compPos:'居中', styleTag:'抓拍纪实', aspect:'4:5 竖版', tattoo:'不使用', imperf1:'不使用', imperf2:'不使用'
+  },
+  '复古港风': {
+    lens:'长焦压缩', viewpoint:'过肩', shotSize:'半身照', dof:'浅景深', device:'胶片相机',
+    mainLight:'侧逆光', ambient:'不使用', colorTone:'钨丝暖', film:'暖调怀旧', cine:'复古俄头',
+    temperament:'冷艳', age:'22岁', race:'东亚美少女', face:'鹅蛋脸', skin:'奶油肌', texture:'哑光质感', body:'纤细匀称', leg:'修长笔直', firstImp:'明艳动人',
+    hairLen:'及胸长发', hairColor:'深棕', hairCurl:'波浪卷', hairTie:'披散', hairBangs:'斜刘海', hairState:'凌乱蓬松', hairAcc:'不使用',
+    makeup:'港风红唇', makeupDetail:'重眼影', smudge:'不使用', nails:'精致美甲',
+    emotion:'隐忍', eye:'含情脉脉', mouth:'微张',
+    clothCat:'上衣', clothItem:'上衣｜白色棉质宽松衬衫', clothBottom:'下装｜浅蓝低腰牛仔裤', clothMat:'不使用', clothPattern:'条纹', clothDeco:'不使用', clothLayer:'法式半塞', shoes:'不使用', socks:'不使用', accessory:'银色耳环发间轻晃',
+    poseCat:'静态姿势', pose:'靠墙', poseExtra:'不使用',
+    scene:'老房子', prop:'不使用', weather:'不使用', comp:'框架构图', compPos:'偏左三分之一', styleTag:'复古照', aspect:'3:4 竖向', tattoo:'不使用', imperf1:'胶片颗粒', imperf2:'不使用'
+  },
+  '元气活力': {
+    lens:'广角', viewpoint:'低角度仰拍', shotSize:'七分身', dof:'大景深', device:'单反微单',
+    mainLight:'环形光', ambient:'不使用', colorTone:'日光清新', film:'高饱和', cine:'通用人像',
+    temperament:'飒爽', age:'20岁', race:'东亚美少女', face:'小圆脸', skin:'自然肤色', texture:'自然素肌', body:'纤细匀称', leg:'匀称有力', firstImp:'邻家亲切',
+    hairLen:'及腰长发', hairColor:'深棕', hairCurl:'自然微卷', hairTie:'高马尾', hairBangs:'空气刘海', hairState:'随风轻扬', hairAcc:'不使用',
+    makeup:'甜妹妆', makeupDetail:'自然腮红', smudge:'不使用', nails:'自然素甲',
+    emotion:'惊喜', eye:'直视镜头', mouth:'微笑',
+    clothCat:'上衣', clothItem:'上衣｜浅蓝牛仔外套', clothBottom:'下装｜白色网球裙', clothMat:'牛仔', clothPattern:'不使用', clothDeco:'不使用', clothLayer:'不使用', shoes:'白色厚底运动鞋', socks:'白色小腿袜', accessory:'不使用',
+    poseCat:'动态动作', pose:'原地跃起', poseExtra:'不使用',
+    scene:'海边', prop:'不使用', weather:'晴空万里', comp:'对角线', compPos:'居中', styleTag:'街头', aspect:'9:16 竖屏', tattoo:'不使用', imperf1:'不使用', imperf2:'不使用'
+  }
+};
+OPT.overallPreset = norm(['不使用'].concat(Object.keys(OVERALL_PRESETS)));
+
+/* ================= 界面配置 ================= */
+var MODE = 'EN';
+var SECTIONS = [
+  {id:'overall', title:'⓪ 一键人设套装（推荐先选）', open:true, desc:'选一套自洽的整套配置，省得逐项拼出矛盾组合；选完仍可逐项微调', fields:[
+    {id:'overallPreset', label:'整套套装', list:'overallPreset'}
+  ]},
+  {id:'camera', title:'① 拍摄角度', open:true, desc:'景别决定「能看到多少」——特写看脸、全身看姿态', fields:[
+    {id:'lens', label:'镜头类型（必选）', list:'lens'},
+    {id:'viewpoint', label:'视角（必选）', list:'viewpoint'},
+    {id:'shotSize', label:'景别（含半身/全身）', list:'shotSize'},
+    {id:'dof', label:'景深', list:'dof'},
+    {id:'device', label:'设备质感（可选）', list:'device'}
+  ]},
+  {id:'light', title:'② 光影·色调·氛围', open:true, fields:[
+    {id:'mainLight', label:'主光技法（必选）', list:'mainLight'},
+    {id:'ambient', label:'氛围光（可选）', list:'ambient'},
+    {id:'colorTone', label:'色温·情绪（必选）', list:'colorTone'},
+    {id:'film', label:'胶片模拟（可选）', list:'film'},
+    {id:'cine', label:'电影镜头（可选）', list:'cine'}
+  ]},
+  {id:'person', title:'③ 人物维度', open:true, fields:[
+    {id:'temperament', label:'气质定调', list:'temperament'},
+    {id:'age', label:'年纪身份（全年龄）', list:'age'},
+    {id:'race', label:'人种感', list:'race'},
+    {id:'face', label:'脸型', list:'face'},
+    {id:'skin', label:'肤色', list:'skin'},
+    {id:'texture', label:'肤质', list:'texture'},
+    {id:'body', label:'体型骨架', list:'body'},
+    {id:'leg', label:'腿型', list:'leg'},
+    {id:'firstImp', label:'第一印象', list:'firstImp'}
+  ]},
+  {id:'hair', title:'④ 发型', open:false, fields:[
+    {id:'hairLen', label:'长度', list:'hairLen'},
+    {id:'hairColor', label:'颜色', list:'hairColor'},
+    {id:'hairCurl', label:'卷直', list:'hairCurl'},
+    {id:'hairTie', label:'扎法', list:'hairTie'},
+    {id:'hairBangs', label:'刘海', list:'hairBangs'},
+    {id:'hairState', label:'发丝状态', list:'hairState'},
+    {id:'hairAcc', label:'头饰（可选）', list:'hairAcc'}
+  ]},
+  {id:'makeup', title:'⑤ 妆容', open:false, fields:[
+    {id:'makeup', label:'妆容类型（必选）', list:'makeup'},
+    {id:'makeupDetail', label:'妆面细节（可选）', list:'makeupDetail'},
+    {id:'smudge', label:'糊妆状态（可选）', list:'smudge'},
+    {id:'nails', label:'指甲（可选）', list:'nails'}
+  ]},
+  {id:'expression', title:'⑥ 表情·眼神·嘴部', open:false, fields:[
+    {id:'emotion', label:'情绪表情（必选）', list:'emotion'},
+    {id:'eye', label:'眼神方向（必选）', list:'eye'},
+    {id:'mouth', label:'嘴部状态（必选）', list:'mouth'}
+  ]},
+  {id:'cloth', title:'⑦ 服装', open:false, mode:'both', fields:[]},
+  {id:'pose', title:'⑧ 姿态·动作', open:false, mode:'both', fields:[]},
+  {id:'bg', title:'⑨ 背景·道具·天气', open:false, fields:[
+    {id:'scene', label:'场景（必选）', list:'scene'},
+    {id:'prop', label:'道具（可选）', list:'prop'},
+    {id:'weather', label:'天气（可选）', list:'weather'}
+  ]},
+  {id:'comp', title:'⑩ 构图·视觉引导', open:false, fields:[
+    {id:'comp', label:'构图策略（必选）', list:'comp'},
+    {id:'compPos', label:'人物位置', list:'compPos'},
+    {id:'aspect', label:'画面比例（推荐选）', list:'aspect'}
+  ]},
+  {id:'extra', title:'附加：风格·纹身·瑕疵', open:false, fields:[
+    {id:'styleTag', label:'整体风格', list:'styleTag'},
+    {id:'tattoo', label:'纹身图案（可选）', list:'tattoo'},
+    {id:'tattooPos', label:'纹身位置', list:'tattooPos'},
+    {id:'imperf1', label:'真实感瑕疵 1', list:'imperf'},
+    {id:'imperf2', label:'真实感瑕疵 2', list:'imperf'}
+  ]}
+];
+var CLOTH_FIELDS = {
+  sfw: [
+    {id:'stylePreset', label:'设计风格一键搭配', list:'stylePreset'},
+    {id:'clothCat', label:'主件类别', list:'clothCat'},
+    {id:'clothItem', label:'主件款式（必选）', list:'clothItem'},
+    {id:'clothBottom', label:'下装补充（可选）', list:'clothBottom'},
+    {id:'clothMat', label:'材质·光效', list:'clothMat'},
+    {id:'clothPattern', label:'图案花纹', list:'clothPattern'},
+    {id:'clothDeco', label:'装饰细节', list:'clothDeco'},
+    {id:'clothLayer', label:'穿搭层次', list:'clothLayer'},
+    {id:'shoes', label:'鞋履', list:'shoes'},
+    {id:'socks', label:'丝袜/袜子', list:'socks'},
+    {id:'accessory', label:'配饰', list:'accessory'}
+  ]
+};
+var POSE_FIELDS = {
+  sfw: [
+    {id:'poseCat', label:'姿态类别', list:'poseCat'},
+    {id:'pose', label:'姿态（必选）', list:'pose'},
+    {id:'poseExtra', label:'手部细节（可选）', list:'poseExtra'}
+  ]
+};
+
+/* ================= 界面构建 ================= */
+function $(id){return document.getElementById(id);}
+function en(id){var e=$(id); if(!e) return ''; var o=byVal(OPT[e.dataset.list], e.value); return o?o.en:'';}
+function zh(id){var e=$(id); if(!e) return ''; var o=byVal(OPT[e.dataset.list], e.value); return o?o.t:'';}
+function byVal(list,val){ if(!list) return null; for(var i=0;i<list.length;i++){ if(list[i].v===val) return list[i]; } return null; }
+function flatClothItems(cat){return CLOTH[cat].map(function(x){return {v:cat+'｜'+x[0], t:x[1], en:x[2]};});}
+function randOf(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+var userPicked = {};
+var allFieldIds = [];
+
+function fillSelect(sel, list, keep){
+  var cur = keep ? sel.value : null;
+  sel.innerHTML='';
+  if(!list.some(function(o){return o.v==='';})) list.unshift({v:'', t:'未选 · 随机补全', en:''});
+  for(var i=0;i<list.length;i++){
+    var o=document.createElement('option'); o.value=list[i].v; o.textContent=list[i].v; sel.appendChild(o);
+  }
+  if(cur && list.some(function(o){return o.v===cur;})) sel.value=cur;
+}
+function makeSelect(f){
+  var s=document.createElement('select'); s.id=f.id; s.dataset.list=f.list;
+  fillSelect(s, OPT[f.list]||[], false);
+  s.addEventListener('change', function(){ userPicked[f.id]=(s.value!==''); onFieldChange(f.id); });
+  return s;
+}
+function addFields(container, fields){
+  fields.forEach(function(f){
+    var d=document.createElement('div'); d.className='field';
+    var l=document.createElement('span'); l.className='lab'; l.textContent=f.label;
+    var s=makeSelect(f); d.appendChild(l); d.appendChild(s); container.appendChild(d);
+  });
+}
+function buildForm(){
+  var form=$('form'); form.innerHTML='';
+  SECTIONS.forEach(function(sec){
+    var det=document.createElement('details'); det.className='sec'; if(sec.open) det.open=true; det.id='sec_'+sec.id;
+    var sum=document.createElement('summary');
+    sum.innerHTML='<span>'+sec.title+'</span><span class="chev" id="chev_'+sec.id+'">'+(sec.open?'▲ 收起':'▼ 展开')+'</span>';
+    det.appendChild(sum);
+    var body=document.createElement('div'); body.className='body';
+    var head=document.createElement('div'); head.className='sec-head'; head.style.justifyContent='flex-end';
+    if(sec.desc){ var dsc=document.createElement('span'); dsc.className='sec-desc'; dsc.textContent=sec.desc; head.appendChild(dsc); }
+    var rb=document.createElement('button'); rb.className='mini'; rb.textContent='本段随机';
+    rb.onclick=function(e){e.preventDefault(); randomizeSection(sec); return false;};
+    head.appendChild(rb); body.appendChild(head);
+    var fields=document.createElement('div'); fields.className='fields'; fields.id='fields_'+sec.id; body.appendChild(fields);
+    if(sec.id==='cloth'){
+      var g1=document.createElement('div'); g1.className='fgroup'; g1.id='sfwClothFields';
+      g1.innerHTML='<div class="gtitle">服装段（决策链：风格 → 主件 → 材质 → 层次 → 鞋袜配饰，6–8 维）</div>';
+      var f1=document.createElement('div'); f1.className='fields'; g1.appendChild(f1);
+      addFields(f1, CLOTH_FIELDS.sfw); fields.appendChild(g1);
+    } else if(sec.id==='pose'){
+      var p1=document.createElement('div'); p1.className='fgroup'; p1.id='sfwPoseFields';
+      p1.innerHTML='<div class="gtitle">姿态段（姿态 × 手部细节）</div>';
+      var q1=document.createElement('div'); q1.className='fields'; p1.appendChild(q1);
+      addFields(q1, POSE_FIELDS.sfw); fields.appendChild(p1);
+    } else { addFields(fields, sec.fields); }
+    det.appendChild(body);
+    det.addEventListener('toggle', function(){ var c=$('chev_'+sec.id); if(c) c.textContent=det.open?'▲ 收起':'▼ 展开'; });
+    form.appendChild(det);
+  });
+  populateClothItems(v('clothCat'));
+  populatePoseItems(v('poseCat'));
+  collectFieldIds();
+  $('promptBox').textContent='请在左侧选择选项：选过的用你的选择，没选的会在点「生成提示词」时随机补全。';
+  renderDepo(); renderCompat();
+}
+function collectFieldIds(){
+  allFieldIds=[];
+  SECTIONS.forEach(function(sec){ (sec.fields||[]).forEach(function(f){ allFieldIds.push(f.id); }); });
+  CLOTH_FIELDS.sfw.forEach(function(f){ allFieldIds.push(f.id); });
+  POSE_FIELDS.sfw.forEach(function(f){ allFieldIds.push(f.id); });
+}
+function populateClothItems(cat){
+  if(!cat) return;
+  var items=flatClothItems(cat);
+  OPT['clothItem']=items;
+  var si=$('clothItem'); if(si){ fillSelect(si, items, true); }
+  var bottoms=[{v:'不使用',t:'不使用',en:'(none)'}].concat(flatClothItems('下装'));
+  OPT['clothBottom']=bottoms;
+  var sb=$('clothBottom'); if(sb){ fillSelect(sb, bottoms, true); }
+}
+function populatePoseItems(cat){
+  if(!cat || !POSES[cat]) return;
+  var arr=POSES[cat].map(function(x){return {v:x[0], t:x[1], en:x[1]};});
+  OPT['pose']=arr;
+  var sp=$('pose'); if(sp){ fillSelect(sp, arr, true); }
+}
+function applyOverall(name){
+  var p=OVERALL_PRESETS[name]; if(!p) return;
+  /* 先设类别，再填充动态列表，最后统一赋值 */
+  if(p.clothCat){ var cc=$('clothCat'); if(cc){ cc.value=p.clothCat; userPicked['clothCat']=true; } populateClothItems(p.clothCat); }
+  if(p.poseCat){ var pc=$('poseCat'); if(pc){ pc.value=p.poseCat; userPicked['poseCat']=true; } populatePoseItems(p.poseCat); }
+  Object.keys(p).forEach(function(k){ var e=$(k); if(e && e.tagName==='SELECT'){ e.value=p[k]; userPicked[k]=true; } });
+  generate();
+}
+function onFieldChange(id){
+  if(id==='overallPreset'){ applyOverall(v('overallPreset')); return; }
+  if(id==='clothCat'){ populateClothItems(v('clothCat')); userPicked['clothItem']=false; }
+  if(id==='poseCat'){ populatePoseItems(v('poseCat')); userPicked['pose']=false; }
+  if(id==='stylePreset'){
+    var p=STYLE_PRESETS[v('stylePreset')];
+    if(p){ Object.keys(p).forEach(function(k){ var e=$(k); if(e){ e.value=p[k]; userPicked[k]=true; } }); populateClothItems(p.clothCat||v('clothCat')); }
+  }
+  generate();
+}
+function v(id){var e=$(id); return e?e.value:'';}
+
+function randomizeField(f){
+  var list = OPT[f.list] || [];
+  if(f.list==='clothItem'){ var cat=v('clothCat')||'连衣裙'; list=flatClothItems(cat); }
+  if(f.list==='clothBottom'){ list=[{v:'不使用',t:'不使用',en:'(none)'}].concat(flatClothItems('下装')); }
+  if(f.list==='pose'){ var pc=v('poseCat')||'静态姿势'; list=POSES[pc].map(function(x){return {v:x[0],t:x[1],en:x[1]};}); }
+  if(f.list==='clothCat'||f.list==='poseCat'||f.list==='overallPreset'||f.list==='stylePreset') return;
+  if(!list.length) return;
+  var e=$(f.id); if(!e) return;
+  e.value=randOf(list).v; userPicked[f.id]=true;
+}
+function randomizeSection(sec){
+  if(sec.id==='overall') return;
+  var fs = sec.id==='cloth'?CLOTH_FIELDS.sfw : sec.id==='pose'?POSE_FIELDS.sfw : sec.fields;
+  if(sec.id==='cloth'){ var cats=OPT.clothCat; $('clothCat').value=randOf(cats).v; userPicked['clothCat']=true; populateClothItems(v('clothCat')); }
+  if(sec.id==='pose'){ var pcs=OPT.poseCat; $('poseCat').value=randOf(pcs).v; userPicked['poseCat']=true; populatePoseItems(v('poseCat')); }
+  fs.forEach(randomizeField);
+  generate();
+}
+function randomizeAll(){
+  SECTIONS.forEach(function(sec){
+    if(sec.id==='overall') return;
+    var fs = sec.id==='cloth'?CLOTH_FIELDS.sfw : sec.id==='pose'?POSE_FIELDS.sfw : sec.fields;
+    if(sec.id==='cloth'){ $('clothCat').value=randOf(OPT.clothCat).v; userPicked['clothCat']=true; }
+    if(sec.id==='pose'){ $('poseCat').value=randOf(OPT.poseCat).v; userPicked['poseCat']=true; }
+    fs.forEach(randomizeField);
+  });
+  populateClothItems(v('clothCat')); populatePoseItems(v('poseCat'));
+  generate();
+}
+function clearAll(){
+  allFieldIds.forEach(function(id){ var e=$(id); if(e) e.value=''; });
+  Object.keys(userPicked).forEach(function(k){ userPicked[k]=false; });
+  $('promptBox').textContent='请在左侧选择选项：选过的用你的选择，没选的会在点「生成提示词」时随机补全。';
+  $('meta').innerHTML=''; $('selfcheck').innerHTML=''; renderDepo(); renderCompat();
+}
+
+/* ================= 生成逻辑 ================= */
+function countWords(s){ return (s.match(/[a-zA-Z0-9]+/g)||[]).length; }
+function countCJK(s){ return (s.match(/[一-鿿]/g)||[]).length; }
+
+function fillBlanks(){
+  var filled=0;
+  ['clothCat','poseCat'].forEach(function(id){ var e=$(id); if(e && (!userPicked[id]||e.value==='')){ e.value=randOf(OPT[id]).v; filled++; } });
+  populateClothItems(v('clothCat')); populatePoseItems(v('poseCat'));
+  allFieldIds.forEach(function(id){
+    var e=$(id); if(!e) return;
+    if(id==='clothCat'||id==='poseCat'||id==='stylePreset'||id==='overallPreset') return;
+    if(userPicked[id] && e.value!=='') return;
+    var list=(OPT[id]||[]); if(!list.length) return;
+    var rv=randOf(list).v; if(rv!==''&&rv!==undefined){ e.value=rv; filled++; }
+  });
+  return filled;
+}
+
+function isMinor(){ return parseInt(v('age'), 10)<18; }
+function buildMinorPrompt(isEN){
+  var age=parseInt(v('age'), 10);
+  var scenes={公寓:['ordinary lived-in apartment living room with a sofa and wooden furniture','有沙发和木质家具的普通家庭公寓客厅'],卧室:['ordinary bedroom with a bed and curtains','有床和窗帘的普通卧室'],教室:['ordinary classroom with desks and a blackboard','有课桌和黑板的普通教室'],图书馆:['ordinary library with bookshelves and reading tables','有书架和阅览桌的普通图书馆']};
+  var scene=scenes[v('scene')]||scenes['公寓'];
+  if(isEN){
+    var subject=age===0?'an infant under one year old':'a '+age+'-year-old '+(age<13?'child':'teenager');
+    return 'This is a non-sexual, age-appropriate everyday portrait of '+subject+'. '+
+      'The subject has natural facial features appropriate to their age. Their eyes have a calm, curious expression. '+
+      'Their hair is naturally arranged, and their face has no adult glamour makeup. '+
+      'They wear comfortable, opaque everyday clothing appropriate to their age. '+
+      'The subject rests comfortably in a natural, supported position appropriate to their age. '+
+      'The camera frames the face and shoulders at eye level, without emphasizing the body. '+
+      'It is overcast daytime, with room lights off and broad neutral daylight from a window to the left-front. The window-facing side is brighter, with soft natural shadows on the opposite cheek and under the nose and chin. '+
+      'The subject is physically present in an '+scene[0]+', with recognisable background details. The same window light illuminates both the subject and the surroundings. '+
+      'Use a phone rear main camera in standard photo mode, with consistent exposure, white balance, detail and mild noise across the frame. Preserve subtle skin color variation and ordinary eye proportions. No beauty retouching, added rim light, film grading or strong portrait-mode blur.';
+  }
+  return '这是一张人物的适龄日常人像，人物'+(age===0?'未满一岁的婴儿':age+'岁')+'。'+
+    '面部保留符合实际年龄的自然特征，双眼流露平静好奇的神态。头发自然整理，面部不使用成人风格妆容。'+
+    '人物穿着符合年龄的舒适不透日常服装，以符合年龄的自然姿态舒适休息，身体得到适当支撑。'+
+    '镜头平视人物，画面取面部和肩部，不强调身体部位。阴天白昼，室内灯关闭，左前方窗户是主要光源；靠窗侧较亮，面部另一侧、鼻翼和下巴保留自然柔和阴影。'+
+    '人物实际处于'+scene[1]+'，背景细节可辨认。窗光同时照亮人物和环境，整张照片的曝光、白平衡、细节与轻微噪点一致。'+
+    '使用手机后置主摄普通拍照模式，保留细微肤色变化与正常眼睛比例，无美颜、额外轮廓光、电影调色或强人像虚化。';
+}
+
+function buildPromptEN(){
+  if(isMinor()) return buildMinorPrompt(true);
+  var p=[];
+  /* 开场 */
+  var shot = v('shotSize')?en('shotSize'):'medium shot, waist-up half-body';
+  var open='This is a portrait photograph, '+shot;
+  var film=v('film'), cine=v('cine');
+  if(film && film!=='不使用') open+=', with '+en('film');
+  else if(cine && cine!=='不使用') open+=', with '+en('cine');
+  else open+=', with natural photographic color and texture';
+  if(v('lens')&&v('lens')!=='') open+=', '+en('lens');
+  p.push(open+'.');
+  /* ② 光 */
+  var ml=v('mainLight');
+  p.push((LIGHT_EN[ml]||en('mainLight')||'Soft light')+'.');
+  if(v('ambient')&&v('ambient')!=='不使用') p[p.length-1]=p[p.length-1].replace(/\.$/,'')+' '+en('ambient')+'.';
+  if(v('colorTone')) p.push(en('colorTone')+'.');
+  /* ③ 人物 */
+  var skinTxt = en('skin') + (v('texture')&&v('texture')!=='不使用' ? ', '+en('texture')+' texture' : '');
+  var s3='The subject is a '+en('age')+', '+en('race')+', '+en('temperament')+', with '+skinTxt+', a '+en('face')+(FACE_EN[v('face')]?', '+FACE_EN[v('face')]:'')+', a '+en('body')+' figure with '+en('leg')+', giving a '+en('firstImp')+' impression.';
+  if(v('tattoo')&&v('tattoo')!=='不使用') s3+=' A '+en('tattoo')+' tattoo sits on her '+en('tattooPos')+', ink naturally faded into the skin.';
+  p.push(s3);
+  /* ④ 发型 */
+  var s4='She has '+en('hairLen')+' '+en('hairColor')+' '+en('hairCurl')+' hair, '+en('hairTie')+', '+en('hairBangs')+', '+en('hairState');
+  if(v('hairAcc')&&v('hairAcc')!=='不使用') s4+=' with '+en('hairAcc');
+  s4+=', a few casually styled strands falling across her forehead and cheeks, strands responding naturally to the selected light source.';
+  p.push(s4);
+  /* ⑤ 妆容 */
+  var s5='Her makeup is '+en('makeup');
+  if(v('makeupDetail')&&v('makeupDetail')!=='不使用') s5+=', '+en('makeupDetail');
+  if(v('smudge')&&v('smudge')!=='不使用') s5+', '+en('smudge');
+  if(v('nails')&&v('nails')!=='不使用') s5+=', '+en('nails');
+  s5+='. Eyebrows are naturally straight and soft, upper eyelid crease clearly visible, lashes fine, long and separated one by one.';
+  p.push(s5);
+  /* ⑥ 表情 */
+  var s6=en('emotion')+', eyes '+en('eye')+', '+en('mouth')+'.';
+  p.push(s6);
+  /* ⑧ 姿态 */
+  var poseName=POSE_EN[v('pose')]||v('pose'); var pe=v('poseExtra');
+  var s8=poseName?poseName:'';
+  if(pe&&pe!=='不使用') s8+=', '+en('poseExtra');
+  s8+='. Both hands are clearly visible in frame with natural relaxed finger spacing and no distortion.';
+  p.push(s8);
+  /* ⑦ 服装 */
+  var dims=[];
+  var ly=v('clothLayer'); if(ly&&ly!=='不使用') dims.push(en('clothLayer'));
+  var it=v('clothItem'); if(it&&it!=='不使用') dims.push(it.split('｜')[1]?byVal(flatClothItems(it.split('｜')[0]),it).en:it);
+  var bt=v('clothBottom'); if(bt&&bt!=='不使用'&&bt!=='不使用｜') dims.push('lower half in '+byVal(OPT['clothBottom'],bt).en);
+  var mt=v('clothMat'); if(mt&&mt!=='不使用') dims.push(en('clothMat'));
+  var pa=v('clothPattern'); if(pa&&pa!=='不使用') dims.push(en('clothPattern')+' pattern');
+  var dc=v('clothDeco'); if(dc&&dc!=='不使用') dims.push(en('clothDeco')+' detail');
+  var sh=v('shoes'); if(sh&&sh!=='不使用') dims.push(en('shoes'));
+  var sk=v('socks'); if(sk&&sk!=='不使用') dims.push(en('socks'));
+  var ac=v('accessory'); if(ac&&ac!=='不使用') dims.push(en('accessory'));
+  var s7=dims.join(', ')+'.';
+  if(mt&&mt!=='不使用') s7=s7.replace(/\.$/,'')+', the fabric draping loosely over her shoulders and moving with her posture, folds crisp and clearly resolved.';
+  p.push(s7);
+  /* ⑨ 背景 */
+  var s9=en('scene')+'.';
+  if(v('prop')&&v('prop')!=='不使用') s9+=en('prop')+'.';
+  if(v('weather')&&v('weather')!=='不使用') s9+=en('weather')+'.';
+  s9+=' The subject is physically present in this setting. The subject and surroundings share consistent light direction, exposure, white balance, image detail and noise, with natural hair and clothing edges.';
+  p.push(s9);
+  /* ⑩ 构图 */
+  var s10=en('comp')+', the subject '+en('compPos')+'.';
+  if(v('aspect')&&v('aspect')!=='不使用') s10+=' '+en('aspect')+'.';
+  if(v('styleTag')&&v('styleTag')!=='不使用') s10+=' Overall a '+en('styleTag')+' style.';
+  s10+=' Preserve natural skin color variation and age-appropriate facial proportions; apply only the explicitly selected photographic styling.';
+  p.push(s10);
+  return p.join(' ');
+}
+
+function buildPromptZH(){
+  if(isMinor()) return buildMinorPrompt(false);
+  var parts=[];
+  var s1=zh('lens')+'，'+zh('viewpoint');
+  if(v('shotSize')) s1+='，取'+v('shotSize')+'景别';
+  if(v('dof')&&v('dof')!=='不使用') s1+='，'+zh('dof');
+  if(v('device')&&v('device')!=='不使用') s1+='，画面以'+zh('device')+'呈现';
+  parts.push(s1+'。');
+  var s2=zh('mainLight')+'。';
+  if(v('ambient')&&v('ambient')!=='不使用') s2+=zh('ambient')+'。';
+  s2+=zh('colorTone')+'。';
+  if(v('film')&&v('film')!=='不使用') s2+=zh('film')+'。';
+  if(v('cine')&&v('cine')!=='不使用') s2+=zh('cine')+'。';
+  parts.push(s2);
+  var s3=v('temperament')+'的'+v('age')+'，'+v('race')+'，'+v('skin')+'（'+v('texture')+'），'+v('face')+'，'+v('body')+'、'+v('leg')+'，'+v('firstImp')+'。';
+  if(v('tattoo')&&v('tattoo')!=='不使用') s3+=v('tattooPos')+'有一枚'+v('tattoo')+'纹身，墨色贴合皮肤自然晕染。';
+  parts.push(s3);
+  var s4=v('hairLen')+v('hairColor')+v('hairCurl')+'，'+v('hairTie')+'，'+v('hairBangs')+'，'+v('hairState');
+  if(v('hairAcc')&&v('hairAcc')!=='不使用') s4+='，'+zh('hairAcc');
+  parts.push(s4+'。');
+  var s5='妆容为'+zh('makeup');
+  if(v('makeupDetail')&&v('makeupDetail')!=='不使用') s5+='，'+v('makeupDetail');
+  if(v('smudge')&&v('smudge')!=='不使用') s5+='，'+zh('smudge');
+  if(v('nails')&&v('nails')!=='不使用') s5+='，'+zh('nails');
+  parts.push(s5+'。');
+  var s6=zh('emotion')+'，'+zh('eye')+'，'+zh('mouth')+'。';
+  parts.push(s6);
+  var s8=v('pose')||'';
+  if(v('poseExtra')&&v('poseExtra')!=='不使用') s8+='，'+zh('poseExtra');
+  parts.push(s8+'。');
+  var cd=[];
+  if(v('clothLayer')&&v('clothLayer')!=='不使用') cd.push(zh('clothLayer'));
+  var it=v('clothItem'); if(it&&it!=='不使用') cd.push(it.split('｜')[1]||it);
+  var bt=v('clothBottom'); if(bt&&bt!=='不使用') cd.push('下身'+ (bt.split('｜')[1]||bt));
+  if(v('clothMat')&&v('clothMat')!=='不使用') cd.push(zh('clothMat'));
+  if(v('clothPattern')&&v('clothPattern')!=='不使用') cd.push(v('clothPattern')+'图案');
+  if(v('clothDeco')&&v('clothDeco')!=='不使用') cd.push(v('clothDeco')+'装饰');
+  if(v('shoes')&&v('shoes')!=='不使用') cd.push('脚踩'+zh('shoes'));
+  if(v('socks')&&v('socks')!=='不使用') cd.push('双腿'+zh('socks'));
+  if(v('accessory')&&v('accessory')!=='不使用') cd.push(zh('accessory'));
+  parts.push(cd.join('，')+'。');
+  var s9=zh('scene')+'。';
+  if(v('prop')&&v('prop')!=='不使用') s9+=zh('prop')+'。';
+  if(v('weather')&&v('weather')!=='不使用') s9+=zh('weather')+'。';
+  s9+='人物实际处于该场景中，与周围环境共享光线方向、曝光、白平衡、细节和噪点，发丝与衣服边缘自然过渡。';
+  parts.push(s9);
+  var s10=zh('comp')+'，人物'+zh('compPos')+'。';
+  if(v('aspect')&&v('aspect')!=='不使用') s10+='画面取'+v('aspect')+'。';
+  if(v('styleTag')&&v('styleTag')!=='不使用') s10+='整体'+v('styleTag')+'风格。';
+  parts.push(s10);
+  return parts.join('');
+}
+
+/* ================= 自检 ================= */
+var BAN_EN=['monolid','fox eyes','arched brows','honey-tan','freckles','burgundy','ash-brown','charcoal','fitted dark dress','infectious laugh','smirk','motion','sleek shoulder','mature','high cheekbones','long narrow face','sharp jawline'];
+/* 基于选项值判定雷区，避免对整段英文做子串误判（如 mature-sister / charcoal blazer） */
+function checkBan(){
+  var fatal=[], warn=[];
+  /* SFW 安全锚定：真正的越界必须拦下（致命） */
+  var mouth=v('mouth')||''; if(/吐舌|舔唇/.test(mouth)) fatal.push('过度性感动作('+mouth+')');
+  /* 偏离「白净大眼甜妹」家族的审美雷区：强烈建议改，但不致命 */
+  var face=v('face')||''; if(/瓜子脸|高级脸/.test(face)) warn.push('窄长脸倾向('+face+')');
+  var skin=v('skin')||''; if(/小麦色|古铜色/.test(skin)) warn.push('黄黑皮偏离白净主线('+skin+')');
+  var hc=v('hairColor')||''; if(/亚麻|灰蓝/.test(hc)) warn.push('杂色发显没气色('+hc+')');
+  var pose=v('pose')||''; if(/大笑|狂笑|捡物|弯腰/.test(pose)) warn.push('高风险姿态('+pose+')');
+  var ci=v('clothItem')||''; if(/紧身/.test(ci)) warn.push('紧身款易显廉价('+ci+')');
+  return {fatal:fatal, warn:warn};
+}
+function runSelfCheck(text){
+  var isEN = MODE==='EN';
+  var F=[], S=[];
+  var nEN=countWords(text), nZH=countCJK(text);
+  var hasCJK=/[一-鿿]/.test(text), hasLatin=/[a-zA-Z]/.test(text);
+  if(isMinor()) return {
+    F:[{id:'F2',name:'语言模式',ok:isEN?(hasLatin&&!hasCJK):(hasCJK&&!hasLatin),note:'适龄日常人像模板'},
+       {id:'F3',name:'适龄内容',ok:text===buildMinorPrompt(isEN),note:'独立模板不使用成人风格选项'}],
+    S:[{id:'S1',ok:true,note:'适龄模板，成人风格选项不进入输出；支持公寓、卧室、教室、图书馆，其他场景回退公寓'},
+       {id:'S10',ok:false,note:'待出图后目视检查共享光线、背景融合、皮肤眼睛及边缘；文本检查不证明真实感'}],
+    nEN:nEN,nZH:nZH
+  };
+  /* F1 物理自洽 */
+  var nightScene=/夜景|夜店|天台|夜晚公园|车内|水下/.test(v('scene')||'');
+  var f1ok=true, f1note='光源与场景匹配';
+  if(nightScene && v('colorTone')==='日光清新'){ f1ok=false; f1note='夜晚场景配日光主光，光源矛盾'; }
+  F.push({id:'F1',name:'物理自洽',ok:f1ok,note:f1note});
+  /* F2 语言模式 */
+  var f2ok = isEN ? (hasLatin && !hasCJK) : (hasCJK && !hasLatin);
+  F.push({id:'F2',name:'语言模式',ok:f2ok,note:isEN?'EN 模式需全英文无中文':'ZH 模式需全中文无英文'});
+  /* F3 禁用雷词（SFW 安全锚定，致命；基于选项值，避免原文误判） */
+  var ban=checkBan();
+  F.push({id:'F3',name:'SFW 安全锚定',ok:ban.fatal.length===0,note:ban.fatal.length?('命中: '+ban.fatal.join('、')):'安全锚定通过'});
+  /* F4 维度覆盖 */
+  var covered=0; ['lens','viewpoint','mainLight','face','eye','mouth','hairLen','makeup','clothItem','pose','scene','comp'].forEach(function(id){ if(v(id)) covered++; });
+  F.push({id:'F4',name:'维度覆盖≥10/12',ok:covered>=10,note:'当前 '+covered+' 维'});
+  /* F5 字数 */
+  var f5ok = isEN ? (nEN>=300&&nEN<=1000) : (nZH>=300&&nZH<=600);
+  F.push({id:'F5',name:isEN?'词数300–1000':'字数300–600',ok:f5ok,note:isEN?('约 '+nEN+' 词'):('约 '+nZH+' 字')});
+  /* F6 无违禁格式 */
+  var f6ok=!/\([^)]*:\s*[\d.]+\)/.test(text) && !/masterpiece|best quality/i.test(text);
+  F.push({id:'F6',name:'无权重/标签串',ok:f6ok,note:'无 (x:1.2) / 质量标签'});
+  /* F7 句式粒度 */
+  var f7ok = isEN ? ((text.match(/\./g)||[]).length>=8) : (text.split('，').length>=8);
+  F.push({id:'F7',name:'句式粒度',ok:f7ok,note:isEN?'含多句完整句子':'含多维度完整描述'});
+  /* F8 光位4要素 */
+  var f8ok = isEN ? (/(direction|from|side|above|below|front|back|behind)/i.test(text) && /(highlight|gradient|shadow|outline|backlight|rim)/i.test(text)) : (zh('mainLight').length>0);
+  F.push({id:'F8',name:'光位4要素',ok:f8ok,note:isEN?'含方向+硬度+色温+皮肤效果':'主光已选'});
+  /* F9 眼神状态 */
+  var f9ok = isEN ? (/gaze|looking|eyes/.test(text.toLowerCase())) : (v('eye')!=null);
+  F.push({id:'F9',name:'眼神状态',ok:f9ok,note:isEN?'含眼神状态词':'眼神已选'});
+  /* F10 背景排除法 */
+  var f10ok = isEN ? (/physically present|no (environment|props|plants|foreground)/i.test(text)) : /共享光线|无|空/.test(text);
+  F.push({id:'F10',name:'背景与空间关系',ok:f10ok,note:'环境保留空间关系；纯背景可使用排除句'});
+  /* S1 情绪→光影 */
+  if(/慵懒|温柔/.test(v('emotion')||'') && v('mainLight')==='硬光') S.push({id:'S1',ok:false,note:'慵懒温柔情绪配硬光，建议换柔光'});
+  else S.push({id:'S1',ok:true,note:'情绪与光影协调'});
+  /* S2 身份→姿态 */
+  if(v('firstImp')==='楚楚可怜' && /叉腰|背手|直立/.test(v('pose')||'')) S.push({id:'S2',ok:false,note:'楚楚可怜配霸气站姿，气质撕裂'});
+  else S.push({id:'S2',ok:true,note:'身份与姿态协调'});
+  /* S3 色调→情绪 */
+  if(/霓虹混合|冷白荧光/.test(v('colorTone')||'') && /冷淡|恍惚失神|生人勿近/.test(v('emotion')||'')) S.push({id:'S3',ok:false,note:'霓虹/冷荧光撞情绪主调'});
+  else S.push({id:'S3',ok:true,note:'色调与情绪一致'});
+  /* S4 设备→画质 */
+  if((v('device')==='手机自拍'&&/长焦|中焦/.test(v('lens')||''))||(v('device')==='监控摄像头'&&v('dof')==='浅景深')) S.push({id:'S4',ok:false,note:'设备与画质自洽存疑'});
+  else S.push({id:'S4',ok:true,note:'设备与画质自洽'});
+  /* S5 服装维度 */
+  var dimCount=0; ['clothLayer','clothItem','clothBottom','clothMat','clothPattern','clothDeco','shoes','socks','accessory'].forEach(function(id){ var val=v(id); if(val&&val!=='不使用'&&val.indexOf('不使用')!==0) dimCount++; });
+  S.push({id:'S5',name:'服装维度6–8',ok:dimCount>=4,note:'当前 '+dimCount+' 维（建议 6–8）'});
+  /* S6 眼神→机位 */
+  if(/俯拍|鸟瞰/.test(v('viewpoint')||'') && v('eye')==='挑逗') S.push({id:'S6',ok:false,note:'俯拍配挑逗注视，视线矛盾'});
+  else if(/仰拍|虫视/.test(v('viewpoint')||'') && v('eye')==='乞求哀怨') S.push({id:'S6',ok:false,note:'仰拍配向上哀求，视线矛盾'});
+  else S.push({id:'S6',ok:true,note:'眼神方向与机位匹配'});
+  /* S7 家族一致性（审美雷区，强烈建议改，不致命） */
+  if(ban.warn.length) S.push({id:'S7',ok:false,name:'偏离甜妹家族',note:'⚠ '+ban.warn.join('、')+'（建议改回家族内取值）'});
+  else S.push({id:'S7',ok:true,name:'甜妹家族一致',note:'未触发审美雷区'});
+  /* S9 同质化风险 */
+  var fam = (v('face')==='圆脸'||v('face')==='鹅蛋脸') && (v('skin')==='白皙'||v('skin')==='冷白皮') && (v('age')==='18岁女大学生'||v('age')==='20岁'||v('age')==='22岁') && /黑发|深棕/.test(v('hairColor')||'') && v('hairBangs')==='空气刘海';
+  if(fam){
+    var diff=0; if(v('hairTie')&&v('hairTie')!=='披散') diff++; if(v('emotion')) diff++; if(v('clothItem')) diff++; if(v('pose')) diff++;
+    if(diff<3) S.push({id:'S9',ok:false,note:'已落入「白净大眼甜妹」家族但差异化变量<3，建议再调发型扎法/表情/服装/手部'});
+    else S.push({id:'S9',ok:true,note:'家族内温和差异化充分'});
+  } else S.push({id:'S9',ok:true,note:'未落入单一家族'});
+  S.push({id:'S10',ok:false,note:'待出图后目视检查共享光线、空间、肤质和边缘，关键词通过不代表照片真实'});
+  return {F:F,S:S,nEN:nEN,nZH:nZH};
+}
+
+/* ================= 沉淀面板 ================= */
+var DEPO_DO=['圆脸/柔和鹅蛋脸，带婴儿肥','大而亮双眼皮，眼神清亮','白瓷肌/白皙通透无雀斑','年龄按用户要求（全年龄）','黑/深棕长直发+空气刘海','温柔露齿笑/浅笑','米白浅灰浅色针织，宽松','暖米纯色墙干净无杂物','撩发/手放胸/扶领（手清晰）','伪素颜裸感肌'];
+var DEPO_DONT=['窄长脸/高颧骨/尖下颌','单眼皮/小眼','狐狸眼/挑眉','黄黑皮/雀斑','酒红亚麻灰棕杂色发','张嘴狂笑/冷笑','深色紧身裙','动态手势(手易糊)'];
+/* ================= 搭配建议（相容性引擎） ================= */
+var SHOT_ORDER=['极致特写','大特写','特写','近景','中近景','半身照','中景','中全景','七分身','全景','远景','大远景'];
+function shotRank(s){ return SHOT_ORDER.indexOf(s); }
+/* 画面比例 → 朝向：portrait 竖 / square 方 / landscape 横 */
+var ASP_ORIENT={'1:1 方形':'square','5:4 横向':'landscape','4:5 竖版':'portrait','3:4 竖向':'portrait','2:3 竖向':'portrait','3:2 横向':'landscape','9:16 竖屏':'portrait','16:9 宽屏':'landscape','2.39:1 电影宽银幕':'landscape'};
+function isFullBodyPose(p){ return /走向镜头|背向离开|回眸行走|雨中行走|高跟摇曳|回眸奔跑|裙摆飞扬|原地跃起|慢舞|转圈|出水瞬间|弯腰捡物|撑床起身|大字摊|仰卧|侧卧|镜前|倚窗|靠墙|直立|叉腰|背手/.test(p||''); }
+
+function compat(){
+  var out=[];
+  function bad(msg,fix){ out.push({lvl:'bad',msg:msg,fix:fix}); }
+  function tip(msg,fix){ out.push({lvl:'tip',msg:msg,fix:fix}); }
+  var shot=v('shotSize'), rank=shotRank(shot);
+  var pose=v('pose')||'', scene=v('scene')||'', tone=v('colorTone')||'';
+  var light=v('mainLight')||'', film=v('film')||'', weather=v('weather')||'';
+  var device=v('device')||'', lens=v('lens')||'', cine=v('cine')||'';
+  var shoes=v('shoes')||'', socks=v('socks')||'', clothCat=v('clothCat')||'', layer=v('clothLayer')||'';
+  var hairLen=v('hairLen')||'', hairTie=v('hairTie')||'', makeup=v('makeup')||'', nails=v('nails')||'';
+  var eye=v('eye')||'', viewpoint=v('viewpoint')||'', age=v('age')||'', emotion=v('emotion')||'';
+  var aspect=v('aspect')||'', ao=ASP_ORIENT[aspect]||'', styleTag=v('styleTag')||'';
+
+  /* 1) 夜景场景 × 日光主调 */
+  var night=/酒店套房|夜店|天台|便利店|车内|夜晚公园|水下/.test(scene);
+  if(night && /日光清新|中性白/.test(tone)) bad('夜景场景配「'+tone+'」色温，光源与时间矛盾', '建议色温改「月光冷调 / 钨丝暖 / 霓虹混合」');
+  /* 2) 手机自拍 × 长焦/微距 */
+  if(device==='手机自拍' && /长焦压缩|中焦|微距|移轴/.test(lens)) bad('「手机自拍」却配「'+lens+'」，镜头与设备矛盾', '建议镜头改「广角 / 超广角」，或设备改「单反微单」');
+  /* 3) 拍立得 × 现代锐利电影镜头 */
+  if(device==='拍立得' && /现代锐利|经典好莱坞|梦幻奢华/.test(cine)) bad('拍立得配「'+cine+'」电影镜头不搭', '建议电影镜头改「不使用 / 复古俄头」');
+  /* 4) 黑白胶片 × 高饱和/霓虹色温 */
+  if(film==='黑白质感' && /霓虹混合|日光清新|烛光暖/.test(tone)) tip('黑白胶片下「'+tone+'」色温几乎失效', '建议色温改「中性白 / 月光冷调」，突出黑白层次');
+  /* 5) 晴空 × 封闭/夜间场景 */
+  if(weather==='晴空万里' && /水下|夜店|便利店|浴室/.test(scene)) bad('「'+scene+'」配「晴空万里」天气矛盾', '建议天气改「不使用 / 夜色深沉」');
+  /* 6) 赤脚 × 袜子 */
+  if(shoes==='赤脚' && socks && socks!=='不使用') bad('「赤脚」却又选了「'+socks+'」，鞋袜冲突', '建议二选一：去掉袜子，或改穿一双鞋');
+  /* 7) 连衣裙 × 半塞/打结 */
+  if(clothCat==='连衣裙' && /衣摆腰间打结|法式半塞/.test(layer)) bad('连衣裙没有独立衣摆，「'+layer+'」不适用', '建议改「细腰带束腰线 / 外套披肩头」');
+  /* 8) 特写类 × 全身动作 */
+  if(rank>=0 && rank<=2 && isFullBodyPose(pose)) bad('「'+shot+'」看不到「'+pose+'」这类全身姿态', '建议景别改「半身照 / 中近景」，或姿态改坐/卧/局部');
+  /* 9) 特写类 × 服装维度堆叠 */
+  if(rank>=0 && rank<=2 && (v('clothItem') || (v('clothMat')&&v('clothMat')!=='不使用'))) tip('「'+shot+'」下服装材质/图案几乎看不到', '可精简服装维度，把重点放在面部与妆容');
+  /* 10) 远景 × 美甲/眼神细节 */
+  if(rank>=8 && ((nails&&nails!=='不使用')||eye)) tip('「'+shot+'」下美甲、眼神细节太小看不清', '建议景别收到「半身照」以内，或忽略这些细节');
+  /* 11) 剪影光 × 面部妆容/眼神 */
+  if(light==='剪影光' && ((makeup&&makeup!=='素颜')||eye)) bad('剪影光下看不到面部妆容与眼神', '建议主光改「发丝光 / 侧逆光」，或妆容改素颜、去掉眼神设定');
+  /* 12) 短发 × 需要长发的扎法 */
+  if(/齐耳短发|短发|精灵短发/.test(hairLen) && /丸子头|双丸子头|双马尾|低双马尾|麻花辫|鱼骨辫|盘发|低髻|松散发髻|高马尾|低马尾|侧马尾/.test(hairTie)) bad('「'+hairLen+'」扎不出「'+hairTie+'」', '建议扎法改「披散 / 半扎」，或把发型改长');
+  /* 13) 俯拍/鸟瞰 × 向上看的眼神 */
+  if(/高角度俯拍|鸟瞰/.test(viewpoint) && /勾引|挑逗|乞求哀怨/.test(eye)) bad('俯拍却让眼神「往上」，视线方向矛盾', '建议眼神改「垂眸 / 放空虚无 / 直视镜头」，或机位改「低角度仰拍」');
+  /* 14) 仰拍 × 向上哀求 */
+  if(/低角度仰拍/.test(viewpoint) && eye==='乞求哀怨') bad('仰拍配「乞求哀怨」向上看，视线方向矛盾', '建议眼神改「垂眸 / 直视镜头」');
+  /* 15) 硬光 × 慵懒/温柔一类的柔情绪 */
+  if(light==='硬光' && /慵懒|温柔|治愈|害羞/.test(emotion)) tip('硬光偏硬朗，配「'+emotion+'」柔情绪建议柔光', '可改主光「柔光箱 / 环形光」，或情绪改「飒爽 / 冷淡」');
+  /* 16) 水下 × 全妆 */
+  if(scene==='水下' && makeup && makeup!=='素颜' && makeup!=='清纯淡妆') tip('水下妆容容易糊，建议淡妆或素颜', '建议妆容改「素颜 / 清纯淡妆」');
+  /* 17) 低龄 × 烟酒道具 */
+  if(age && parseInt(age)<=20 && /红酒杯|清酒|香烟/.test(v('prop')||'')) tip('低龄角色配烟酒道具偏成熟，需谨慎', '建议道具改「奶茶 / 花束 / 书籍」');
+  /* 18) 特写类 × 横幅比例（留空背景） */
+  if(rank>=0 && rank<=2 && ao==='landscape') bad('「'+shot+'」配「'+aspect+'」横幅会留大片空背景，浪费景别', '建议比例改「1:1 方形 / 4:5 竖版」，更聚焦面部');
+  /* 19) 全身/远景 × 方形（裁头脚） */
+  if(rank>=7 && ao==='square') bad('「'+shot+'」配「'+aspect+'」方形会把头或脚裁掉', '建议比例改「2:3 竖版 / 9:16 竖屏」展现全身，或「16:9 / 2.39:1」宽幅');
+  /* 20) 全景/七分身 × 横幅（易裁脚） */
+  if((rank===7||rank===8) && ao==='landscape') tip('「'+shot+'」用横幅易裁到脚，若以人为重点建议「2:3 竖版」', '若想展现环境则「16:9 / 2.39:1」更合适');
+  /* 21) 远景/大远景 × 竖屏（裁环境） */
+  if(rank>=9 && ao==='portrait') tip('「'+shot+'」以环境为主，却用「'+aspect+'」竖屏会裁掉环境', '建议比例改「3:2 横向 / 16:9 / 2.39:1」横幅展现环境');
+  /* 22) 电影剧照 × 非宽幅 */
+  if(styleTag==='电影剧照' && aspect!=='16:9 宽屏' && aspect!=='2.39:1 电影宽银幕') tip('「电影剧照」风格建议宽幅比例', '建议比例改「16:9 宽屏 / 2.39:1 电影宽银幕」');
+  /* 23) 手机/素人自拍 × 电影宽幅 */
+  if((device==='手机自拍'||styleTag==='素人自拍') && ao==='landscape') tip('手机/素人自拍用横幅偏刻意', '建议比例改「9:16 竖屏 / 4:5 竖版」');
+  return out;
+}
+function renderCompat(){
+  var el=$('compat'); if(!el) return;
+  var list=compat();
+  if(!list.length){ el.innerHTML='<h3>🧭 搭配建议</h3><div class="c-ok">✅ 当前各项搭配自洽，无明显矛盾。</div>'; return; }
+  var bads=list.filter(function(x){return x.lvl==='bad';}).length;
+  var tips=list.filter(function(x){return x.lvl==='tip';}).length;
+  var bits=[];
+  if(bads) bits.push('<span class="c-bad">'+bads+' 处矛盾</span>');
+  if(tips) bits.push('<span class="c-tip">'+tips+' 条提示</span>');
+  var html='<h3>🧭 搭配建议（'+bits.join('，')+'）</h3>';
+  list.forEach(function(x){ html+='<div class="row '+x.lvl+'">'+x.msg+(x.fix?' <span class="fix">→ '+x.fix+'</span>':'')+'</div>'; });
+  el.innerHTML=html;
+}
+
+function renderDepo(){
+  var el=$('depo'); if(!el) return;
+  var html='<h3 class="do">✅ 好图公式（必须保留）</h3><div>'+DEPO_DO.map(function(x){return '<span class="do">'+x+'</span>';}).join(' · ')+'</div>';
+  html+='<h3 class="dont">❌ 翻车雷区（必须避免）</h3><div>'+DEPO_DONT.map(function(x){return '<span class="dont">'+x+'</span>';}).join(' · ')+'</div>';
+  /* 当前雷区高亮 */
+  var hits=[];
+  var sel={face:v('face'),skin:v('skin'),hairColor:v('hairColor'),age:v('age'),mouth:v('mouth'),clothItem:v('clothItem'),pose:v('pose'),emotion:v('emotion'),hairBangs:v('hairBangs')};
+  if(sel.face==='瓜子脸') hits.push('窄长脸倾向');
+  if(sel.skin==='小麦色'||sel.skin==='古铜色') hits.push('黄黑皮偏离白净主线');
+  if(/亚麻|灰蓝/.test(sel.hairColor||'')) hits.push('杂色发显没气色');
+  if(sel.mouth==='吐舌'||sel.mouth==='舔唇') hits.push('过度性感动作');
+  if(sel.pose&&/大笑|狂笑/.test(sel.pose)) hits.push('张嘴狂笑不优雅');
+  if(sel.pose&&/捡物|弯腰/.test(sel.pose)) hits.push('弯腰捡物手易糊');
+  if(hits.length){ html+='<h3 class="dont">⚠ 当前选择触雷</h3><div>'+hits.map(function(x){return '<span class="chip">'+x+'</span>';}).join('')+'</div>'; }
+  html+='<div style="margin-top:8px;color:var(--sub)">原则：差异化≠特征化——只在「白净大眼甜妹」家族内温和微调，优先保证好看。</div>';
+  el.innerHTML=html;
+}
+
+/* ================= 渲染 ================= */
+function render(text, checks){
+  $('promptBox').textContent=text;
+  var meta='模式：<b>'+(MODE==='EN'?'EN · v3 超详细':'ZH · 中文叙事')+'</b>｜';
+  meta+= MODE==='EN' ? ('词数：<b>约 '+checks.nEN+' 词</b>') : ('字数：<b>约 '+checks.nZH+' 字</b>');
+  $('meta').innerHTML=meta;
+  var Fok=checks.F.filter(function(x){return x.ok;}).length, Sok=checks.S.filter(function(x){return x.ok;}).length, ft=checks.F.length, st=checks.S.length;
+  var line='自检: 致命项 <b class="'+(Fok===ft?'ok':'no')+'">'+Fok+'/'+ft+'</b> '+(Fok===ft?'✅':'⚠️')+' ｜ 风格项 <b class="'+(Sok===st?'ok':'wa')+'">'+Sok+'/'+st+'</b>';
+  var sc=$('selfcheck'); sc.innerHTML='';
+  var l=document.createElement('div'); l.className='sc-line'; l.innerHTML=line; sc.appendChild(l);
+  var det=document.createElement('details'); det.className='sc-detail';
+  var sum=document.createElement('summary'); sum.textContent='查看自检明细'; det.appendChild(sum);
+  var dbox=document.createElement('div');
+  checks.F.concat(checks.S).forEach(function(c){ var d=document.createElement('div'); d.innerHTML='<span class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✅':'⚠️')+'</span> <b>'+c.id+'</b> '+(c.name||'风格项')+'——'+c.note; dbox.appendChild(d); });
+  det.appendChild(dbox); sc.appendChild(det);
+  renderDepo(); renderCompat();
+}
+function generate(){
+  var filled=fillBlanks();
+  var text = MODE==='EN' ? buildPromptEN() : buildPromptZH();
+  var checks = runSelfCheck(text);
+  render(text, checks);
+  lastEN = MODE==='EN' ? text : buildPromptEN();
+  lastZH = MODE==='EN' ? buildPromptZH() : text;
+}
+var lastEN='', lastZH='';
+
+/* ================= 按钮 ================= */
+$('genBtn').onclick=generate;
+$('randAll').onclick=randomizeAll;
+$('clearBtn').onclick=clearAll;
+function copyText(t){
+  function fb(){ var ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).catch(fb); else fb();
+}
+$('copyBtn').onclick=function(){ copyText($('promptBox').textContent); var b=this; b.textContent='已复制 ✓'; setTimeout(function(){b.textContent='复制当前';},1500); };
+$('copyEN').onclick=function(){ copyText(lastEN); var b=this; b.textContent='已复制 ✓'; setTimeout(function(){b.textContent='复制英文';},1500); };
+$('copyZH').onclick=function(){ copyText(lastZH); var b=this; b.textContent='已复制 ✓'; setTimeout(function(){b.textContent='复制中文';},1500); };
+$('mEN').onclick=function(){ MODE='EN'; $('mEN').className='on'; $('mZH').className=''; $('outTag').textContent='（英文 · 用于 ImageGen）'; generate(); };
+$('mZH').onclick=function(){ MODE='ZH'; $('mZH').className='on'; $('mEN').className=''; $('outTag').textContent='（中文 · 便于阅读标注）'; generate(); };
+
+buildForm();
+$('outTag').textContent='（英文 · 用于 ImageGen）';
+generate();
+</script>
+</body>
+</html>

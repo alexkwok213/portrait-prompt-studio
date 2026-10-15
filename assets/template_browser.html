@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>人像图片模板库</title>
+<style>
+:root{--bg:#f4f2ed;--card:#fff;--ink:#252525;--muted:#6b6b6b;--line:#e2ded6;--accent:#8a5a3b}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);max-width:1180px;margin:0 auto;padding:36px 24px;line-height:1.75}
+h1{margin:0 0 6px;font-size:26px}
+.sub{color:var(--muted);margin:0 0 28px;font-size:14px}
+.note{background:#fff6dc;border-left:3px solid #d9a441;padding:12px 16px;border-radius:0 8px 8px 0;margin:0 0 28px;font-size:14px}
+main{display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start}
+@media(max-width:880px){main{grid-template-columns:1fr}}
+aside,section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 14px}
+.tpl{width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font:inherit}
+.tpl:hover{border-color:var(--accent)}
+.tpl[aria-current="true"]{border-color:var(--accent);background:#faf6f1}
+.tpl b{display:block;font-size:15px}
+.tpl span{color:var(--muted);font-size:13px}
+h3{font-size:17px;margin:26px 0 8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;margin:8px 0 4px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#faf8f5;font-weight:600;white-space:nowrap}
+tr[data-protected="true"] td:first-child::after{content:"受保护";display:inline-block;margin-left:6px;font-size:11px;background:#eef2f7;color:#4a5a72;padding:1px 6px;border-radius:4px}
+textarea{width:100%;min-height:180px;font:13px/1.7 ui-monospace,Menlo,monospace;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fcfbf9}
+label{display:block;margin:16px 0 6px;font-size:14px}
+button{padding:7px 14px;margin:8px 8px 0 0;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font:inherit}
+button.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.bad{color:#9b3a2e}.ok{color:#246149}
+.status{font-size:14px;margin:8px 0 0;min-height:22px}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.7 ui-monospace,Menlo,monospace;background:#fcfbf9;border:1px solid var(--line);border-radius:8px;padding:14px;max-height:420px;overflow:auto}
+img.preview{width:100%;border-radius:10px;border:1px solid var(--line);background:#eee}
+.buckets{font-size:13.5px;color:var(--muted)}
+.buckets li{margin-bottom:5px}
+code{background:#f0ece5;padding:1px 5px;border-radius:4px;font-size:12.5px}
+</style>
+
+<h1>人像图片模板库</h1>
+<p class="sub">模板是拆解后的提示词，生成时只用文字。原图仅供人查阅，不作为生成输入。</p>
+<p class="note"><b>替换模板时</b>：只改用户点名的元素，其余保持不动。<code>E7</code> 光位、<code>E9</code> 画幅机位、<code>E10</code> 成像倾向默认受保护——它们决定整体物理关系，随手改会让人物与环境的光线互相打架。</p>
+
+<main>
+  <aside>
+    <h2>模板</h2>
+    <div id="list"></div>
+    <h2 style="margin-top:24px">替换需求</h2>
+    <label for="change">要改什么（例：换成红色连衣裙 / 改成短发）</label>
+    <textarea id="change" placeholder="写用户提出的替换需求"></textarea>
+    <button class="pri" id="apply">生成替换清单</button>
+    <p class="status" id="status"></p>
+  </aside>
+
+  <section>
+    <p id="empty" class="bad">请选择一个模板。</p>
+    <div id="detail" hidden>
+      <h2 style="margin-top:0" id="name"></h2>
+      <p class="buckets" id="meta"></p>
+      <img class="preview" id="img" alt="模板预览" />
+      <p class="buckets" id="srcnote"></p>
+
+      <h3>元素表</h3>
+      <div id="table"></div>
+
+      <h3>中文提示词</h3>
+      <textarea id="zh"></textarea>
+      <h3>English prompt</h3>
+      <textarea id="en"></textarea>
+      <button class="pri" id="copy">复制当前提示词</button>
+      <button id="reset">恢复模板原文</button>
+      <p class="status" id="status2"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+// 由 build_templates.js 注入：每个模板的元数据、元素表与两版提示词原文
+const TEMPLATES = [{"id": "middle-school-14yo", "title": "middle-school-14yo", "meta": "全新人物，不基于任何已有模板", "sourceNote": "", "preview": "", "elements": [{"id": "E1", "name": "身份", "value": "十四岁东亚少女，152 cm，婴儿肥基本消退、四肢完全拉长、肩线清楚", "alt": "13 岁 / 15 岁（见 template-workflow.md 对照表）", "protected": false}, {"id": "E2", "name": "面部结构", "value": "柔和鹅蛋脸（比小学段拉长）、下颌线清晰但下颌角仍圆润无棱角、颧骨不突出、下巴尖而不锐、双眼皮褶皱适中、自然平直眉", "alt": "略方脸 / 单眼皮 / 圆脸（小学段）", "protected": false}, {"id": "E3", "name": "发型", "value": "深棕中长直发到肩胛下、中偏左分缝、柔和斜扫刘海不遮眉、两缕碎发落脸颊、松扎低马尾发尾散开搭后颈、侧逆光暖色亮边", "alt": "高马尾 / 单侧编发 / 齐肩短发", "protected": false}, {"id": "E4", "name": "服装", "value": "白棉校服衬衫（尖领门襟扣到最上）+ 深藏青针织开衫 + 深灰百褶短裙到膝上 + 白中筒袜 + 黑圆头平底鞋", "alt": "米白针织衫 / 淡灰开衫配白裙 / 衬衫配背带短裤", "protected": false}, {"id": "E5", "name": "表情瞬间", "value": "还没完全展开的微笑、不露齿、眼神清亮平静、看镜头", "alt": "刚笑出声 / 抿嘴浅笑 / 看向窗外", "protected": false}, {"id": "E6", "name": "姿态与手", "value": "站立正对镜头肩膀放松、左手垂身侧手指松并拢、右手抬胸前轻扶书包肩带五指自然弯曲指尖未用力、双手完整入画", "alt": "坐窗台 / 双手抱书 / 手插口袋", "protected": false}, {"id": "E7", "name": "光位（受保护）", "value": "画面左侧窗户阴天大面积散射柔光、阴影边缘全平缓无锐利分界、左颊左前臂左肩更亮、右颊下颌右颈部柔和阴影但保留皮肤细节（墙面弱反射补光）、鼻右淡影下巴下浅影头发额左斜影、发缘右肩右臂柔和亮边、窗户唯一光源", "alt": "暖调室内侧光 / 正午户外顶光（需同步改阴影）", "protected": true}, {"id": "E8", "name": "场景", "value": "左1/3窗（外仅见阴天散射的明亮绿树影无细节）、窗下浅木书架（几本素色书脊+一小盆绿植）、右米白墙无花纹、人物距墙约1米、无前景遮挡", "alt": "教室 / 校园走廊 / 公园长椅", "protected": false}, {"id": "E9", "name": "画幅与机位（受保护）", "value": "竖版半身、相机与眼齐平、面部极清晰发丝略柔、书架中度虚化但书轮廓可辨", "alt": "横版 3:2 / 全身 / 头顶留白", "protected": true}, {"id": "E10", "name": "成像倾向（受保护）", "value": "无胶片颗粒、无金色轮廓光、无美颜磨皮、无电影调色、自然眼部纹理", "alt": "干净数码 / 极轻胶片感", "protected": true}], "zh": "一位十四岁东亚女学生的竖版半身人像，身高约一百四十六厘米，是同龄人里的平均水平，肢体比例还是青春期早期的短肢短躯干，小手短手指，肩膀窄而尚未发育，脸颊和鼻侧仍有明显的婴儿肥，这张脸明确是个孩子的脸而不是成年人的脸。她照相机在与她眼睛齐平的位置拍摄，站在自家书房的窗边，身体略微侧向右转约十五度，头部基本正对镜头。\n\n她的脸型是柔和的鹅蛋形，比小学阶段明显拉长，但下颌从耳下到下巴尖一路都是柔软圆润的、看不出下颌角，颧骨不突出，下巴小巧而圆，额头饱满宽阔、太阳穴圆润。眉毛细、低、略不整齐，眉头没有收拾干净，能看出一根根细毛，完全没有修过。眼睛相对她幼小的脸偏大，是单眼皮，褶皱窄且紧贴睫毛根部，眼下有儿童特有的微微浮肿，睫毛短而细，虹膜是深棕色、大小正常。她看着镜头，眼神清亮平静，嘴角微微上扬，是一个有点犹豫的、还没完全到来的浅浅笑意，嘴唇轻轻噘着、仍微微分开，既没有露齿，也不是刻意摆出来的表情。脸上没有任何妆容，只有她自己的皮肤——白皙干净、肤色均匀，脸颊有自然的淡粉色，鼻尖和耳朵略微偏红，嘴唇是健康的自然粉色，没有明显光泽。\n\n她的头发是深棕色的中长直发，长度到肩胛骨下方，中间偏左分缝，刘海柔和地斜扫过额头但没有完全遮住眉毛，两侧各有一缕碎发落到脸颊前面，其余头发在脑后松松地扎成一个低马尾，发尾因为松扎而散开几缕，搭在后颈和肩膀上，发丝在侧逆光里透出一道细细的暖色亮边。\n\n她穿一件白色的棉质校服衬衫，有尖领和前襟门襟，纽扣系到最上面一颗，领口平整；外面套一件浅丁香紫色的针织开衫，厚度较薄，袖口罗纹微微收口，前襟有一排小珍珠扣，针织纹理清晰可见，衣摆在腰部形成几道自然的堆褶；下身是一条浅炭灰色的百褶短裙，灰色明确比黑色浅得多，裙褶是规整的竖向压褶，长度到膝盖上方一点；脚上是白色的中筒袜和黑色的圆头平底鞋，袜口在鞋帮上方堆出两三道自然的褶。\n\n她的身体正对镜头，肩膀放松，左手自然地垂在身侧，手指松松并拢、没有握任何东西，右手抬在胸前轻轻扶着自己书包的一侧肩带，五根手指自然弯曲搭在肩带上，指尖没有用力，两只手都完整地出现在画面里，间距自然，没有变形。\n\n主光来自画面左侧的窗户，是大面积散射进来的阴天柔光，阴影边缘全部平缓过渡，没有任何锐利的分界线。人物左脸颊、左前臂外侧和衬衫左肩明显更亮，右侧脸颊、下颌右侧和颈部右侧落入柔和的阴影，但暗部仍然保留皮肤的细节，说明有墙面反射作弱补光。鼻子右侧有一小片淡阴影，下巴下方有一片短而浅的阴影，头发在额头左侧形成一道斜向阴影。人物的头发外缘、右肩和右臂外侧有一圈柔和的亮边，是窗户光从侧后方绕过形成的。背景的明暗方向和人物一致，窗户是画面里唯一的光源。\n\n画面左侧约三分之一是一扇窗，窗外是被阴天散射过的明亮绿色树影，没有细节；窗户下方是一个浅木色的书架，架上立着几本颜色素净的书脊和一盆小小的绿植。画面右侧是米白色的墙面，墙面上没有任何花纹和装饰。人物距墙面约一米，身后没有其他前景遮挡物。\n\n人物面部非常清晰，发丝边缘略带柔化，身后的书架已经略微柔化但仍能辨认出书的轮廓和花盆的形状。照片没有胶片颗粒，没有金色轮廓光，没有美颜磨皮，也没有电影调色。自然的眼部纹理，正常的皮肤细节。画面无水印、无文字、无AI 生成标记、无签名或叠加文字。", "en": "A vertical half-body portrait of a fourteen-year-old East Asian schoolgirl about 146 cm tall, of average height for her age, with the short limbs and short torso of an early-teenager, small hands and short fingers, narrow immature shoulders, and clear baby fat still filling her cheeks and the area beside her nose, her face unmistakably a child's rather than an adult's. She is photographed with the camera at her own eye level, standing by the window of a home study, her body turned about fifteen degrees toward the right of the frame while her head stays nearly straight to the lens.\n\nHer face shape is a soft oval, visibly longer than it would be at primary-school age, with a jaw that is soft and rounded all the way to the chin with no visible jaw angle, no prominent cheekbones, a small round chin, and a broad full forehead with rounded temples. Her eyebrows are fine, low and slightly uneven, with a soft untidy inner end, showing fine individual hairs and no grooming at all. Her eyes are large for her young face with a narrow single eyelid fold sitting close to the lash line, a slight puffiness beneath the eyes typical of a child, and short fine lashes, in ordinary proportion with dark brown irises. She looks into the lens, her eyes clear and calm, the corners of her mouth lifted slightly in a small hesitant almost-smile that has not fully arrived, her lips slightly pursed and still slightly parted, neither showing teeth nor held in place on purpose. There is no visible makeup on her face at all, only her own skin: fair and clean with an even tone, a natural pale pink flush across her cheeks, her nose tip and ear rims slightly redder, and lips in a healthy natural pink with no obvious gloss.\n\nHer hair is dark brown, straight and medium length, falling to just below her shoulder blades, parted a little left of centre, with a soft fringe sweeping across her forehead without fully covering her eyebrows and one loose strand falling in front of each cheek; the rest is gathered loosely into a low ponytail at the back, its ends spreading into a few stray pieces that rest on her nape and shoulders, and her hair carries a thin warm rim of light along the edges where the backlight wraps around it.\n\nShe wears a white cotton school shirt with a pointed collar and a placket front, buttoned to the very top with the collar sitting flat and neat; over it a soft dusty-lilac knitted cardigan of light thickness with slightly ribbed cuffs and small pearl buttons, its knit texture clearly visible and its hem gathering into a few natural folds at her waist; below that a light charcoal-grey pleated skirt, the grey clearly lighter than black with neatly pressed vertical pleats, ending a little above her knees; and white mid-calf socks with black round-toed flat shoes, the sock tops folding into two or three natural creases above the shoe line.\n\nShe stands facing the camera with her shoulders relaxed, her left hand hanging naturally at her side, the fingers loosely together and holding nothing, while her right hand is raised to chest height and lightly holds one strap of her schoolbag, the five fingers curved naturally over the strap without gripping, both hands fully visible in frame with natural relaxed spacing and no distortion.\n\nThe main light comes from the window on the left side of the frame, arriving as a large diffused source under a cloudy sky, every shadow edge falling off gradually with no hard boundary anywhere. Her left cheek, the outer side of her left forearm and the left shoulder of her shirt are clearly brighter, while her right cheek, the right of her jaw and the right of her neck fall into soft shadow that still holds skin detail, which means the wall is bouncing a little fill back into the dark side. A faint shadow sits beside her right nostril, a short shallow shadow lies under her chin, and her hair casts one diagonal shadow across the left of her forehead. Her hair ends, right shoulder and outer right arm carry a soft rim where the window light wraps past them from behind. The background is lit in the same direction as she is, and the window is the only light source in the picture.\n\nThe left third of the frame is a window through which only bright green foliage, scattered by the overcast sky, is visible with no detail; below the window stands a pale wooden bookshelf with several plain book spines and one small potted plant. The right side of the frame is a plain off-white wall with no pattern and no decoration on it. She stands about one metre from the wall with nothing in the foreground in front of her.\n\nHer face is very sharp, her hair edges slightly softened, and the bookshelf behind her mildly softened though the outline of the books and the pot are still recognisable. The photograph carries no film grain, no golden rim light, no beauty retouching and no cinematic colour grade. Natural eye texture and ordinary skin detail. No watermark, no text, no AI-generated label, no signature and no overlaid text."}, {"id": "studio-uniform-v1", "title": "studio-uniform-v1", "meta": "生成稿（无外部来源，未使用任何真实人物照片）", "sourceNote": "新身份：完全虚构人物，不含任何真人身份", "preview": "../templates/studio-uniform-v1/preview.png", "elements": [{"id": "E1", "name": "身份", "value": "十二岁东亚少女，身高约 142 cm，婴儿肥开始消退、下颌线初现、四肢明显拉长、手掌偏大、肩线开始显现", "alt": "10–12 岁（140–145 cm）/ 13–15 岁（150–158 cm）/ 见 template-workflow.md 年龄阶段对照表", "protected": false}, {"id": "E2", "name": "面部结构", "value": "圆润饱满、婴儿肥、短圆下巴、直眉、大眼上眼皮褶皱清晰", "alt": "略方的柔和脸型 / 单眼皮 / 稍长脸", "protected": false}, {"id": "E3", "name": "发型", "value": "深棕直发及肩、空气刘海、两侧低马尾、红色发绳、碎发落额前与脸颊", "alt": "短发齐耳 / 单侧编发 / 高马尾+修饰脸型的碎发", "protected": false}, {"id": "E4", "name": "服装", "value": "白棉衬衫+藏青领结+珍珠扣+藏青百褶背带裙", "alt": "米白宽松针织 / 淡灰开衫配白裙 / 衬衫配背带短裤", "protected": false}, {"id": "E5", "name": "表情瞬间", "value": "好奇带一点羞涩地直视镜头", "alt": "刚笑出来 / 安静聆听嘴部放松 / 看向镜头外的远处", "protected": false}, {"id": "E6", "name": "姿态与手", "value": "左手持浅蓝硬皮书贴胸、右手垂在身侧、双手完整入画", "alt": "右手搭在椅背 / 双手捧一个道具 / 手扶领口", "protected": false}, {"id": "E7", "name": "光位（受保护）", "value": "画面左侧大窗柔化暖调柔光、皮肤柔和均匀高光、头发肩膀柔和轮廓光", "alt": "阴天窗光 / 室内暖灯侧顶光", "protected": true}, {"id": "E8", "name": "场景", "value": "暖米色无缝影棚背景纸、无任何道具", "alt": "浅灰渐变影棚 / 教室内景（需重建光线关系）", "protected": false}, {"id": "E9", "name": "画幅与机位（受保护）", "value": "竖版 2:3 半身、平视、85mm 视角", "alt": "横版 3:2 / 全身 / 头顶留白（杂志封面）", "protected": true}, {"id": "E10", "name": "成像倾向（受保护）", "value": "明显胶片颗粒、色彩饱满、浅景深", "alt": "干净数码 / 无颗粒自然色 / 柔和低对比", "protected": true}], "zh": "竖版半身人像，一位十二岁的东亚少女在影棚拍摄，身高约一百四十二厘米，比同龄孩子显得高一些，四肢已经明显拉长，手掌偏大，肩膀线条开始显现，婴儿肥正在消退但脸颊还留有少年特有的圆润。她穿整洁的白色短袖棉衬衫，圆领，颈前一只藏青小蝴蝶结，前襟一排小珍珠扣，下身是藏青背带裙，裙摆为百褶褶皱；棉布的织纹与裙子的平整织纹清晰可见，腰部有自然堆叠的褶皱。她留着深棕色直发，及肩长度，空气感刘海在额前分开，两侧各扎一束低马尾，用红色小发绳束住，碎发落到额头和脸颊两侧，发梢在光里透出一点暖金色的亮边。\n\n她的脸型圆润但下颌线已经初现，不再是婴儿时期那种圆球形；颧骨还没有突出，下巴仍是短而圆的少年形状，额头饱满。眉毛是自然的直眉，眉形柔和，有一缕缕细毛可见。眼睛大而明亮，上眼皮褶皱清晰可见，下眼睑柔和，睫毛细密且一根根分开，虹膜是正常的深棕色、比例正常。她直视镜头，目光明亮，好奇又带一点点羞涩。脸上没有任何妆容，只有她自己的皮肤，白皙均匀，脸颊与鼻侧有细微自然的色差，鼻尖有一小点高光。\n\n鼻梁短而直，鼻尖小巧圆润，鼻翼微微张开。上唇弧线柔和，嘴唇微微分开，露出整齐的小牙齿，她的左嘴角比右嘴角高出约两毫米，唇色是健康的自然粉色，带一点湿润的光泽。她不戴耳环和项链，只有头发上的红色发绳。她的左手拿着一本浅蓝色硬皮书平贴在胸前，手指纤细自然弯曲；右手自然垂在身侧，手指松松并拢，两只手都完整地出现在画面里，间距自然，没有变形。\n\n主光从画面左侧射入，经过大窗柔化，是暖调的柔光，在她的皮肤上形成柔和均匀的高光和自然的过渡，不产生生硬的阴影；头发和肩膀边缘有一圈柔和的轮廓光。排除项：no watermark, no AI-generated label, no signature, no text overlay. 背景是一整张暖米色的无缝影棚背景纸，是纯净的单一颜色，没有纹理、没有花纹、没有壁纸、没有渐变，完全空旷，没有环境、没有道具、没有植物和任何前景元素。画面有明显的胶片颗粒，色彩饱满丰富，胶片风格，浅景深。竖版 2:3。", "en": "This is a vertical waist-up half-body portrait photograph of a fictional East Asian girl of twelve years old, about 142 cm tall and taller than her age group, with visibly lengthened limbs, slightly large hands, shoulders where the line is beginning to show, and baby fat fading while her cheeks still keep a youthful roundness, shot in a studio with soft vintage film texture. She wears a crisp white short-sleeved cotton shirt with a rounded collar, a small navy blue bow at the neckline, a front row of small pearl buttons, and a navy blue suspender skirt with a pleated hem; the cotton weave and the smooth woven texture are clearly visible with soft natural folds at her waist. Her dark brown hair is straight and fine, cut to shoulder length with airy see-through bangs, gathered into two low twin ponytails tied with small red hair ties, with loose strands falling across her forehead and down along her cheeks and the ends glowing with a thin warm golden highlight where the light catches them.\n\nHer face shape is round but a jawline has started to appear, no longer the spherical proportion of early childhood; her cheekbones are not yet prominent, her chin is still short and rounded in the adolescent way, and her forehead is full. Her eyebrows are naturally straight with a gentle arch and fine individual hairs visible. Her eyes are large and bright, with a clearly visible upper eyelid crease, softly defined lower eyelids, and fine lashes separated one by one, in ordinary proportion with dark brown irises. She gazes directly into the camera, her eyes bright, curious and slightly shy. There is no visible makeup on her face at all, only her own fair and even skin with faint natural colour variation across her cheeks and nose and a small highlight on the tip of her nose.\n\nHer nose bridge is short and straight with a small rounded tip and softly flared nostrils. Her upper lip curves gently, her lips are slightly parted showing small even teeth, the left corner of her mouth sitting about two millimetres higher than the right, tinted a healthy natural pink with a light moist gloss catching the light. She wears no earrings and no necklace, only the small red hair ties in her hair. Her left hand holds a light blue hardcover book flat against her chest with slender naturally curved fingers, while her right hand rests at her side with the fingers loosely together, both hands fully visible in frame with natural relaxed spacing and no distortion.\n\nNo watermark, no AI-generated label, no signature and no text overlay. Gentle diffused warm-toned light falls on her face from the left side of the frame through a large window, giving her skin smooth even highlights and natural tonal transitions with no harsh shadow anywhere on her face, while a gentle soft light rims her hair and shoulders. The background is a seamless solid warm-beige studio backdrop of one pure even colour with no texture, no pattern, no floral decoration, no wallpaper and no gradient, completely empty with no environment, no props, no plants and no foreground elements. The image carries noticeable fine film grain and rich saturated colour in a vintage film style with shallow depth of field. Vertical 2:3."}, {"id": "window-curtain-uniform-v1", "title": "window-curtain-uniform-v1", "meta": "生成稿（无外部来源，未使用任何真实人物照片）；反推自 templates/photos/studio-uniform-v1__a.png", "sourceNote": "新身份：完全虚构人物，不含任何真人身份", "preview": "../templates/window-curtain-uniform-v1/preview.png", "elements": [{"id": "E1", "name": "身份", "value": "十二岁东亚少女，身高约 142 cm，婴儿肥开始消退、下颌线初现、四肢明显拉长、手掌偏大、肩线开始显现", "alt": "10–12 岁（140–145 cm）/ 13–15 岁（150–158 cm）/ 见 template-workflow.md 年龄阶段对照表", "protected": false}, {"id": "E2", "name": "面部结构", "value": "圆润脸、婴儿肥、短圆下巴、额头饱满、颧骨不突出、自然细眉、大眼双眼皮、深棕虹膜正常比例、短直鼻、小圆鼻尖、唇峰清晰、白净皮肤颧骨偏红", "alt": "略方柔和脸型 / 单眼皮 / 稍长脸 / 更小鼻头", "protected": false}, {"id": "E3", "name": "发型", "value": "深棕直发及肩、空气刘海分额、两侧低马尾红发绳、碎发落额前脸颊、发梢侧逆光亮边", "alt": "短发齐耳 / 单侧编发 / 高马尾", "protected": false}, {"id": "E4", "name": "服装", "value": "白棉尖翻领衬衫+小圆扣+珍珠白扣门襟+袖口盖腕+藏青厚棉背带裙+宽肩带金属扣+百褶裙摆", "alt": "米白宽松针织 / 淡灰开衫配白裙 / 衬衫配背带短裤", "protected": false}, {"id": "E5", "name": "表情瞬间", "value": "正在进行的微笑，嘴角近最大但两侧略不对称，眼睛因笑微眯眼周有挤压感，上齿可见，目光直视镜头", "alt": "刚笑出声 / 抿嘴浅笑 / 看镜头外远处 / 安静聆听", "protected": false}, {"id": "E6", "name": "姿态与手", "value": "站立无支撑，躯干右转10度头微左倾，左手抬至腰高握竖直浅蓝硬皮书、拇指侧四指弯曲环抱、指尖轻压留痕，右手垂身侧指松并拢有指缝，衬衫腰部横向堆褶袖口腕部一圈褶", "alt": "坐椅上 / 双手捧书 / 手扶领口 / 手插口袋", "protected": false}, {"id": "E7", "name": "光位（受保护）", "value": "主光画面左侧窗户大面积散射柔光，阴影边缘全平缓无窗格投影，左颊左前臂左肩更亮，右颊下颌右颈部暗但保留肤色细节（墙面弱反射补光），鼻右淡阴影下巴下浅影头发额前两道斜影颈部右侧暗部软边，发梢肩臂外缘柔和亮边，背景同向窗户唯一亮源", "alt": "阴天全窗光 / 暖调室内侧光 / 正午户外顶光（需同步改阴影）", "protected": true}, {"id": "E8", "name": "场景", "value": "左1/4竖窗格深色窗框上下两排过曝白窗、窗前米白薄纱布帘竖向褶皱贯穿全高、右2/3暖米色墙面不规则浅色斑驳，人物距墙0.5–1米布帘左后约0.5米窗更远，无前景遮挡", "alt": "教室 / 公园长椅 / 影棚（需重建光线关系）", "protected": false}, {"id": "E9", "name": "画幅与机位（受保护）", "value": "竖版约2:3半身、镜头与眼齐平略偏高、面部极清晰发丝略柔、背景中度虚化（布帘可辨褶皱、墙面成色块）", "alt": "横版 3:2 / 全身 / 头顶留白（需同步改景别）", "protected": true}, {"id": "E10", "name": "成像倾向（受保护）", "value": "中等胶片颗粒、暗部中间调均匀分布、面部锐发丝略柔、中高对比亮部近过曝暗部不死黑、暖调中高饱和、柔和胶片调性", "alt": "干净数码 / 极轻胶片感 / 高反差时尚", "protected": true}], "zh": "一位十二岁东亚少女的竖版半身人像，身高约一百四十二厘米，比同龄孩子显得高一些，四肢已经明显拉长，手掌偏大，肩膀线条开始显现，婴儿肥正在消退但脸颊还留有少年特有的圆润。她照相机在与她眼睛齐平的位置拍摄。她正对镜头，身体微微向画面右侧转约十度，头部基本正对并略微向左倾，脸上是一个正在进行的微笑——嘴角上扬到接近最大但两侧仍有轻微不对称，眼睛因为笑容而微微眯起，眼周有轻微的挤压感，露出小而整齐的上齿，目光直视镜头。她的脸型圆润但下颌线已经初现，不再是婴儿时期那种圆球形；颧骨还没有突出，下巴仍然是短而圆的少年形状，额头饱满。眉毛自然生长、偏细、平直略带自然弧度，没有修过。眼睛大，上眼皮褶皱清晰可见，下眼睑柔和，睫毛一根根分明，虹膜是深棕色、大小正常。鼻梁短而直，鼻尖小巧圆润，鼻翼微微张开。唇形柔和，上唇有自然唇峰，下唇略厚，唇色是健康的淡粉色，嘴唇闭合。皮肤白净，面颊偏红尤其集中在颧骨和鼻翼两侧，额头比下巴略亮一档，耳廓偏红，皮肤细腻但保留正常的自然纹理。\n\n她留着深棕色直发，及肩长度，空气感刘海在额前分开，两侧各扎一束低马尾，用红色小发绳束住，碎发落到额头和脸颊两侧，发梢在侧逆光里透出一圈柔和的亮边。她穿白色棉质衬衫，尖翻领，领尖明显，领口正中一枚小圆扣，胸前系一排珍珠白小圆扣到第二颗，前襟是门襟式有明显的门襟压线，袖口盖过手腕并在腕部堆了一圈褶皱；下身是深藏青色厚棉布背带裙，肩带较宽，肩带与腰部相连处有金属调节扣，裙腰在腰部收紧并在上方形成几道横向堆褶，裙摆是规整的百褶。\n\n她的左手抬在身前约腰部高度，握着一本竖直的浅蓝色硬皮书，书本略微向身体倾斜，手掌贴着书的侧面，四指弯曲环抱书本边缘、指尖微微用力，手指与书本的接触处有轻微压痕。她的右手自然垂在身侧，手指松松并拢、略微弯曲，指缝间能看到细小缝隙。\n\n主光来自画面左侧的一扇窗户，是大面积散射进来的柔光，阴影边缘全部平缓过渡，没有任何锐利分界线，脸上没有窗格投影。人物左脸颊、左前臂外侧和衬衫左肩明显更亮，右侧脸颊、下颌右侧和颈部右侧落入柔和阴影但仍保留肤色细节，说明有墙面反射作弱补光。鼻右侧有一小片淡阴影，下巴下方有一片浅而短的阴影，头发在额头两侧形成两道斜向阴影，颈部右侧与背景之间有柔和的暗部分界。人物的头发外缘、肩部和手臂外缘有一圈柔和的亮边，是窗户光从侧后方绕过形成的。背景的明暗方向与人物一致，窗户是画面里唯一的亮源。\n\n画面左侧约四分之一是一扇竖向窗格的窗户，窗框颜色深，窗格把窗户分成上下两排，窗内是明亮过曝的白色，看不到细节。窗户前挂着米白色的垂坠薄纱布帘，布帘有明显的竖向褶皱，从上到下贯穿整个画面左侧。画面右侧约三分之二是暖米色墙面，墙面上有不规则的浅色斑驳纹理。人物距墙面约半米到一米，布帘在人物左后方约半米，窗户在布帘后方更远处。\n\n人物面部非常清晰，发丝边缘略带柔化，布帘已略微柔化但仍能看清褶皱走向，墙面纹理已模糊成色块但仍能辨认是斑驳的。画面有中等强度的胶片颗粒，均匀分布在暗部和中间调。整体暖调，饱和度中等偏高，亮部接近过曝，暗部保留细节不死黑，柔和的胶片调性。无水印，无文字，无 AI 生成标记，无签名或叠加文字。", "en": "A vertical half-body portrait of a twelve-year-old East Asian girl about 142 cm tall, taller than her age group, with limbs that have visibly lengthened, hands that are slightly large for her, shoulders where the line is beginning to show, and baby fat fading though her cheeks still keep a youthful roundness. She is photographed with the camera at her own eye level. She faces the camera almost directly, her body turned about ten degrees toward the right of the frame, her head nearly straight and tilted slightly to the left, wearing a smile that is in progress rather than held: her mouth corners rise to near their maximum with a slight asymmetry between the two sides, her eyes narrow a little because of the smile with faint compression around them, her small even upper teeth showing, and her eyes looking straight into the lens. Her face shape is round but a jawline has started to appear, no longer the spherical proportion of early childhood; her cheekbones are still not prominent, her chin is still short and rounded in the adolescent way, and her forehead is full. Her eyebrows grow naturally, fine, straight with a gentle natural arch and no grooming. Her eyes are large, with clearly visible upper eyelid creases, softly defined lower eyelids, and fine lashes separated one by one, in ordinary proportion with dark brown irises. Her nose bridge is short and straight with a small rounded tip and softly flared nostrils. Her lips are softly shaped with a natural cupid's bow, a slightly fuller lower lip, tinted healthy pale pink, closed. Her skin is fair, with the cheeks flushed especially over the cheekbones and beside the nose, her forehead a shade brighter than her chin, her ear rims flushed, and fine natural texture preserved rather than smoothed away.\n\nHer hair is dark brown and straight, cut to shoulder length, with airy see-through bangs parted across the forehead and a low ponytail on each side tied with small red hair ties, loose strands falling across her forehead and cheeks, and a soft glowing rim along the ends where the light wraps around from behind. She wears a white cotton shirt with a pointed folded collar whose tips are clearly defined, a small round button at the centre of the collar, a row of small pearl-white buttons fastened to the second one down the chest, a placket front with a visible seam, and cuffs long enough to cover her wrists where they bunch into a ring of folds; below that a dark navy thick-cotton suspender skirt with wide straps meeting metal adjuster buckles at the waist, the waistband gathered at her waist and forming several horizontal folds above it, and a neatly pleated skirt below.\n\nHer left hand is raised in front of her body at about waist height, holding a light blue hardcover book held upright and tilted slightly toward her body, her palm flat against its side and her four fingers curved around the edge with the fingertips pressing lightly, leaving slight impressions at each point of contact. Her right hand hangs relaxed at her side, the fingers loosely together and slightly curved with small gaps visible between them.\n\nThe main light comes from a window on the left side of the frame and arrives as a large diffused source, every shadow edge falling off gradually with no hard boundary anywhere, and no window-pane shadow cast across her face. Her left cheek, the outer side of her left forearm and the left shoulder of her shirt are clearly brighter, while her right cheek, the right of her jaw and the right of her neck fall into soft shadow that still holds skin detail, which means the wall is bouncing a little fill back into the dark side. A faint shadow sits beside her right nostril, a short shallow shadow lies under her chin, her hair casts two diagonal shadows across her forehead, and the dark side of her neck meets the background in a soft-edged boundary. Her hair ends, shoulders and outer arms carry a soft rim where the window light wraps past them from behind. The background is lit in the same direction as she is, and the window is the only bright source in the picture.\n\nThe left quarter of the frame is a window with vertical panes and a dark frame, divided into two rows of panes, with the area beyond the glass blown out to bright white and showing no detail. A cream-coloured sheer curtain hangs in front of the window with clear vertical folds running from the top of the frame to the bottom. The right two-thirds of the frame is a warm beige wall with irregular pale mottling across its surface. She stands roughly half a metre to one metre from the wall, the curtain about half a metre behind her on the left, and the window farther back beyond the curtain.\n\nHer face is very sharp, her hair edges slightly softened, the curtain mildly softened though its folds still read, and the wall texture blurred into colour patches while still recognisable as mottled. The image carries medium-strength film grain distributed evenly through the shadows and midtones. The overall tone is warm with moderately raised saturation, the highlights approach overexposure, the shadows keep detail without going black, and the rendering has a soft filmic quality. No watermark, no text, no AI-generated label, no signature and no overlaid text."}];
+const list = document.getElementById('list');
+let current = null, pristine = {};
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+function choose(t){
+  current = t;
+  document.querySelectorAll('.tpl').forEach(b=>b.setAttribute('aria-current', b.dataset.id===t.id));
+  document.getElementById('empty').hidden = true;
+  document.getElementById('detail').hidden = false;
+  document.getElementById('name').textContent = t.title;
+  document.getElementById('meta').textContent = t.meta;
+  document.getElementById('srcnote').textContent = t.sourceNote;
+  const img = document.getElementById('img');
+  if (t.preview) { img.src = t.preview; img.hidden = false; } else { img.hidden = true; }
+  document.getElementById('table').innerHTML =
+    '<table><thead><tr><th>#</th><th>元素</th><th>当前值</th><th>可替换为</th></tr></thead><tbody>' +
+    t.elements.map(e=>`<tr data-protected="${e.protected?'true':'false'}"><td>${e.id}</td><td>${esc(e.name)}</td><td>${esc(e.value)}</td><td>${esc(e.alt)}</td></tr>`).join('') +
+    '</tbody></table>';
+  pristine = {zh: t.zh, en: t.en};
+  document.getElementById('zh').value = t.zh;
+  document.getElementById('en').value = t.en;
+  document.getElementById('status').textContent = '';
+  document.getElementById('status2').textContent = '';
+}
+
+TEMPLATES.forEach(t=>{
+  const b = document.createElement('button');
+  b.className = 'tpl'; b.dataset.id = t.id;
+  b.innerHTML = `<b>${esc(t.title)}</b><span>${esc(t.meta)}</span>`;
+  b.onclick = ()=>choose(t);
+  list.appendChild(b);
+});
+
+// 替换匹配。三层：
+//  1) 字符串层——把用户输入切碎，与元素名、可替换值做双向包含匹配。
+//  2) 语义层——关键词映射到元素编号，处理"连衣裙→服装"这类换词。
+//  3) 组合层——"换个脸""换套发型"这类整体重塑要求，一次命中一组元素。
+// 单靠字符串匹配抓不到同义替换和组合需求，所以后两层是必要的。
+const SYNONYM = {
+  E1:['身份','年龄','几岁','岁','小孩','孩子','女孩','男孩','族裔','小学生','初中生','身高','长高','个字'],
+  E2:['脸','换个脸','换脸','面部','五官','眼','眉','鼻','嘴','唇','下巴','脸型','双眼皮','单眼皮','眼皮','长相','样子','气质'],
+  E3:['头发','发型','换个发型','刘海','马尾','辫子','短发','长发','发色','碎发','扎','bob','齐刘海'],
+  E4:['衣服','服装','换个服装','换套服装','换装','穿','裙','衬衫','T恤','针织','毛衣','开衫','校服','裙装','裤','连衣裙','外套','大衣','背带裤','工装','帽','贝雷帽','帽饰','鞋','袜','领','领结','围巾'],
+  E5:['表情','笑','神态','眼神','注视','看','严肃','自然一点','温柔','直视','不看镜头'],
+  E6:['姿势','姿态','手','动作','坐','站','扶','捧','搭','拿','袖口','袖子'],
+  E7:['光','光线','打光','逆光','侧光','顶光','窗光','阴影','氛围光','暗','亮'],
+  E8:['背景','场景','环境','地点','在哪','海边','教室','公园','客厅','影棚','操场','户外','室外','外面','自然景'],
+  E9:['横版','竖版','画幅','比例','构图','机位','角度','俯拍','全身','半身','留白','横过来','竖过来','横着','竖着'],
+  E10:['质感','颗粒','风格','调色','色调','虚化','景深','清晰','锐']
+};
+
+// 组合需求 → 必须同改的元素组。「像不像同一个人」的最小判别集是 E2+E3+E4。
+const COMBO = [
+  {ids:['E2','E3','E4'], kw:['换个脸','换个发型','换套服装','换装','整个人不一样','整个人都','换个人','从头到脚','整体换','换一身','都换','全换','换个人物']},
+  {ids:['E2','E3'], kw:['换个脸','换个发型','头发的脸','脸和头发','发型和脸']},
+  {ids:['E7','E8','E9','E10'], kw:['全部重做','整套换','重新做一张','换个风格','换种风格','换一种风格']}
+];
+
+function normalize(s){return s.replace(/（[^）]*）/g,'').trim();}
+function keywords(want){
+  const parts = want.split(/[，,、。；;：:\s]+/).filter(Boolean);
+  const out = parts.flatMap(p=>{
+    const v = p.replace(/^(换成|改成|变成|换为|改为|换|改|要|把)/,'').trim();
+    return (v && v!==p) ? [p, v] : [p];
+  });
+  // 抽出纯数字年龄："12岁" / "改成8岁" → 补一个 "岁" 关键词，命中 E1 的年龄语义。
+  if (/[0-9０-９]+\s*岁/.test(want)) out.push('岁', '年龄');
+  return out;
+}
+function matchElements(t, want){
+  const raw = keywords(want);
+  const kws = raw.map(k=>normalize(k)).filter(Boolean);
+  const hit = new Set();
+  const idIndex = {};
+  t.elements.forEach((e,i)=>{idIndex[e.id]=i;});
+
+  // 1) 字符串层
+  t.elements.forEach((e,i)=>{
+    const name = normalize(e.name);
+    if (kws.some(k=>name.includes(k) || k.includes(name) || e.alt.includes(k))) hit.add(i);
+  });
+  // 2) 语义层
+  t.elements.forEach((e,i)=>{
+    const syn = SYNONYM[e.id] || [];
+    if (kws.some(k=>syn.some(s=>k.includes(s)))) hit.add(i);
+  });
+  // 3) 组合层
+  COMBO.forEach(c=>{
+    if (raw.some(r=>c.kw.some(k=>r.includes(k)))) {
+      c.ids.forEach(id=>{ if(idIndex[id]!==undefined) hit.add(idIndex[id]); });
+    }
+  });
+  return t.elements.filter((_,i)=>hit.has(i));
+}
+
+document.getElementById('apply').onclick = ()=>{
+  const want = document.getElementById('change').value.trim();
+  const st = document.getElementById('status');
+  if (!current) { st.textContent='请先选择模板。'; return; }
+  if (!want) { st.textContent='请填写替换需求。'; return; }
+  const hits = matchElements(current, want);
+  st.innerHTML = hits.length
+    ? `<span class="ok">可能涉及：${hits.map(e=>e.id+' '+normalize(e.name)).join('、')}</span><br>` +
+      `请在右侧只改这几项的句子，其余保持不动。` +
+      (hits.some(e=>e.protected)
+        ? `<br><span class="bad">其中含受保护元素：改动会影响整体物理关系，请一并检查光线与阴影是否还成立。</span>` : '')
+    : `<span class="bad">未能自动匹配到元素。请对照右侧表格手动定位。</span>`;
+};
+
+document.getElementById('copy').onclick = async ()=>{
+  const text = '## 中文提示词\n'+document.getElementById('zh').value+'\n\n## English prompt\n'+document.getElementById('en').value;
+  try{ await navigator.clipboard.writeText(text);
+    document.getElementById('status2').textContent='已复制。生成时只提交这段文字，不附原图。'; }
+  catch(e){ document.getElementById('status2').textContent='浏览器未允许自动复制，请手动选中。'; }
+};
+document.getElementById('reset').onclick = ()=>{
+  document.getElementById('zh').value = pristine.zh;
+  document.getElementById('en').value = pristine.en;
+  document.getElementById('status2').textContent='已恢复模板原文。';
+};
+
+if (TEMPLATES.length) choose(TEMPLATES[0]);
+</script>
+</body>
+</html>
